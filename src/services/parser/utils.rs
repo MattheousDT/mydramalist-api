@@ -1,0 +1,39 @@
+use crate::models::Image;
+use scraper::{ElementRef, Selector};
+
+pub fn extract_img(el: &ElementRef) -> Option<Image> {
+    el.select(&Selector::parse("img").unwrap())
+        .next()
+        .and_then(|img| {
+            img.value()
+                .attr("data-src")
+                .or(img.value().attr("src"))
+                .map(|s| Image::from(s.to_string()))
+        })
+}
+
+pub fn clean_text(s: &str) -> String {
+    s.trim().to_string()
+}
+
+pub fn from_scraped_str<T>(s: &str) -> Option<T>
+where
+    T: serde::de::DeserializeOwned,
+{
+    let cleaned = s.trim();
+    let json_compat = format!("\"{}\"", cleaned);
+
+    if let Ok(val) = serde_json::from_str::<T>(&json_compat) {
+        return Some(val);
+    }
+
+    let snake_case = cleaned.to_lowercase().replace([' ', '-'], "_");
+    let json_snake_compat = format!("\"{}\"", snake_case);
+
+    if let Ok(val) = serde_json::from_str::<T>(&json_snake_compat) {
+        return Some(val);
+    }
+
+    tracing::warn!("Failed to map scraped string to Enum: [{}]", cleaned);
+    None
+}

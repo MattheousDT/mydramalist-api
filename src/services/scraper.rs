@@ -23,7 +23,6 @@ impl ScraperService {
         }
     }
 
-    /// Internal wrapper to handle the logging and caching lifecycle for any search type.
     async fn perform_search<T, F>(&self, label: &str, url: String, parser: F) -> Result<Vec<T>>
     where
         F: FnOnce(&str) -> Vec<T>,
@@ -31,7 +30,6 @@ impl ScraperService {
     {
         info!(target: "scraper", "[{}] Initiating search: {}", label, url);
 
-        // 1. Check Cache
         if let Some(cached_html) = self.html_cache.get(&url).await {
             debug!(target: "scraper", "[{}] Cache Hit", label);
             let results = parser(&cached_html);
@@ -39,7 +37,6 @@ impl ScraperService {
             return Ok(results);
         }
 
-        // 2. Fetch Fresh HTML
         debug!(target: "scraper", "[{}] Cache Miss. Fetching from MDL...", label);
         let response = self.client.get(&url).send().await?;
         let status = response.status();
@@ -47,11 +44,32 @@ impl ScraperService {
 
         debug!(target: "scraper", "[{}] Received response (Status: {})", label, status);
 
-        // 3. Parse and Cache
         let results = parser(&html);
         self.html_cache.insert(url, html.to_string()).await;
 
         info!(target: "scraper", "[{}] Parsed {} items from fresh HTML", label, results.len());
+        Ok(results)
+    }
+
+    #[instrument(skip(self), fields(search_type = "title_details"))]
+    pub async fn get_title_details(&self, id: String) -> Result<Option<TitleDetails>> {
+        let url = format!("https://mydramalist.com/{}", id);
+
+        if let Some(cached_html) = self.html_cache.get(&url).await {
+            return Ok(MdlParser::parse_title_details(&cached_html, &id));
+        }
+
+        let response = self.client.get(&url).send().await?;
+        let status = response.status();
+
+        if !status.is_success() {
+            return Ok(None);
+        }
+
+        let html = response.text().await?;
+        let results = MdlParser::parse_title_details(&html, &id);
+        self.html_cache.insert(url, html.to_string()).await;
+
         Ok(results)
     }
 

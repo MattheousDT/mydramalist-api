@@ -11,13 +11,13 @@ static MDL_IMAGE_URL_RE: LazyLock<Regex> =
 /// All the different image sizing that MDL offers.
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
 pub struct Image {
-    // Approx. w150px - Used primarily on search results
+    /// Approx. w150px - Used primarily on search results
     #[schema(example = "https://i.mydramalist.com/4v6zJ_4s.jpg")]
     pub small: String,
-    // Approx. w-300px - Used primarily on details page
+    /// Approx. w-300px - Used primarily on details page
     #[schema(example = "https://i.mydramalist.com/4v6zJ_4c.jpg")]
     pub cover: String,
-    // Full size image
+    /// Full size image
     #[schema(example = "https://i.mydramalist.com/4v6zJ_4f.jpg")]
     pub full: String,
 }

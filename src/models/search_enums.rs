@@ -2,8 +2,6 @@ use serde::{Deserialize, Serialize};
 use strum::Display;
 use utoipa::ToSchema;
 
-// The aliases here are for parsing search results
-
 #[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display)]
 #[serde(rename_all = "snake_case")]
 #[repr(i32)]
@@ -20,21 +18,21 @@ pub enum Type {
 #[serde(rename_all = "snake_case")]
 #[repr(i32)]
 pub enum Country {
-    #[serde(alias = "Japanese")]
+    #[serde(alias = "Japanese", alias = "Japan")]
     Japan = 1,
-    #[serde(alias = "Chinese")]
+    #[serde(alias = "Chinese", alias = "China")]
     China = 2,
-    #[serde(alias = "South Korean", alias = "Korean")]
+    #[serde(alias = "South Korean", alias = "Korean", alias = "South Korea")]
     SouthKorea = 3,
-    #[serde(alias = "Taiwanese")]
+    #[serde(alias = "Taiwanese", alias = "Taiwan")]
     Taiwan = 4,
     #[serde(alias = "Hong Kong")]
     HongKong = 5,
-    #[serde(alias = "Thai")]
+    #[serde(alias = "Thai", alias = "Thailand")]
     Thailand = 6,
-    #[serde(alias = "Filipino")]
+    #[serde(alias = "Filipino", alias = "Philippines")]
     Philippines = 7,
-    #[serde(alias = "Singaporean")]
+    #[serde(alias = "Singaporean", alias = "Singapore")]
     Singapore = 8,
 }
 

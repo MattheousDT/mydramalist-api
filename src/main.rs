@@ -17,6 +17,7 @@ async fn main() {
         .route("/api-docs/openapi.json", get(docs::openapi_json))
         .route("/scalar", get(docs::scalar_docs))
         .route("/titles/search", get(handlers::title_search_handler))
+        .route("/titles/{id}", get(handlers::title_details_handler))
         .route("/people/search", get(handlers::people_search_handler))
         .route("/articles/search", get(handlers::article_search_handler))
         .with_state(scraper_service);

@@ -3,7 +3,7 @@ use regex::Regex;
 use scraper::{Html, Selector};
 use std::sync::LazyLock;
 
-use super::utils::{extract_img, from_scraped_str};
+use super::utils::{clean_text, extract_img, from_scraped_str};
 
 static TAG_ID_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"th=(\d+)").expect("Invalid Regex"));
@@ -54,7 +54,7 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
     let mut duration = None;
     let mut content_rating = None;
     let mut score = None;
-    let mut users_scored = None;
+    let mut votes = None;
     let mut watchers = None;
     let mut rank = None;
     let mut popularity = None;
@@ -105,7 +105,7 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
                         .split_whitespace()
                         .next()
                         .and_then(|s| s.parse().ok());
-                    users_scored = li
+                    votes = li
                         .select(&Selector::parse(".hft a").unwrap())
                         .next()
                         .and_then(|e| {
@@ -133,6 +133,8 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
                             Some(CrewMember {
                                 id: href.rsplit('/').next()?.to_string(),
                                 name: e.text().collect::<String>().trim().to_string(),
+                                job: Some("Director".to_string()),
+                                image: None,
                             })
                         })
                         .collect();
@@ -145,6 +147,8 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
                             Some(CrewMember {
                                 id: href.rsplit('/').next()?.to_string(),
                                 name: e.text().collect::<String>().trim().to_string(),
+                                job: Some("Screenwriter".to_string()),
+                                image: None,
                             })
                         })
                         .collect();
@@ -206,7 +210,7 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
 
     let statistics = Statistics {
         score,
-        users_scored,
+        votes,
         watchers,
         reviews_count,
         rank,
@@ -257,11 +261,25 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
                 .collect::<String>()
                 .trim()
                 .to_string();
-            let role_name = el
-                .select(&Selector::parse(".text-ellipsis small").unwrap())
-                .next()
-                .map(|e| e.text().collect::<String>().trim().to_string());
-            let role_type = el
+
+            let mut character = None;
+            let mut character_id = None;
+
+            // Extract Character Info (Same logic as cast parser)
+            for small in el.select(&Selector::parse("small").unwrap()) {
+                if !small.value().classes().any(|c| c == "text-muted") {
+                    character = Some(clean_text(&small.text().collect::<String>()));
+
+                    if let Some(a) = small.select(&Selector::parse("a").unwrap()).next() {
+                        if let Some(href) = a.value().attr("href") {
+                            character_id = Some(href.trim_start_matches("/character/").to_string());
+                        }
+                    }
+                    break;
+                }
+            }
+
+            let role = el
                 .select(&Selector::parse("small.text-muted").unwrap())
                 .next()
                 .map(|e| e.text().collect::<String>().trim().to_string());
@@ -269,8 +287,9 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
             Some(CastMember {
                 person_id,
                 name,
-                role_name,
-                role_type,
+                character,
+                character_id,
+                role,
                 image,
             })
         })

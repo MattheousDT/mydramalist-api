@@ -18,6 +18,12 @@ async fn main() {
         .route("/scalar", get(docs::scalar_docs))
         .route("/titles/search", get(handlers::title_search_handler))
         .route("/titles/{id}", get(handlers::title_details_handler))
+        .route(
+            "/titles/{id}/episodes",
+            get(handlers::title_episodes_handler),
+        )
+        .route("/titles/{id}/cast", get(handlers::title_cast_handler))
+        .route("/titles/{id}/photos", get(handlers::title_photos_handler))
         .route("/people/search", get(handlers::people_search_handler))
         .route("/articles/search", get(handlers::article_search_handler))
         .with_state(scraper_service);

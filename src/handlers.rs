@@ -32,6 +32,69 @@ pub async fn title_details_handler(
 
 #[utoipa::path(
     get,
+    path = "/titles/{id}/episodes",
+    tag = "Titles",
+    summary = "Get Title Episodes",
+    description = "Retrieves a list of episodes for a specific Drama or TV Show using its MyDramaList ID.",
+    params(
+        ("id" = String, Path, description = "MyDramaList Title ID", example = "49231-move-to-heaven")
+    ),
+    responses(
+        (status = 200, description = "List of episodes successfully retrieved", body = Vec<Episode>)
+    )
+)]
+pub async fn title_episodes_handler(
+    State(s): State<Arc<ScraperService>>,
+    Path(id): Path<String>,
+) -> Result<Json<Vec<Episode>>, AppError> {
+    Ok(Json(s.get_title_episodes(id).await?))
+}
+
+#[utoipa::path(
+    get,
+    path = "/titles/{id}/cast",
+    tag = "Titles",
+    summary = "Get Title Cast & Crew",
+    description = "Retrieves the full cast and crew credits for a specific title using its MyDramaList ID.",
+    params(
+        ("id" = String, Path, description = "MyDramaList Title ID", example = "49231-move-to-heaven")
+    ),
+    responses(
+        (status = 200, description = "Cast and crew credits successfully retrieved", body = TitleCast)
+    )
+)]
+pub async fn title_cast_handler(
+    State(s): State<Arc<ScraperService>>,
+    Path(id): Path<String>,
+) -> Result<Json<TitleCast>, AppError> {
+    Ok(Json(s.get_title_cast(id).await?))
+}
+
+#[utoipa::path(
+    get,
+    path = "/titles/{id}/photos",
+    tag = "Titles",
+    summary = "Get Title Photos",
+    description = "Retrieves photos for a specific title using its MyDramaList ID. Supports pagination.",
+    params(
+        ("id" = String, Path, description = "MyDramaList Title ID", example = "49231-move-to-heaven"),
+        PaginationQuery
+    ),
+    responses(
+        (status = 200, description = "Photos successfully retrieved", body = TitlePhotos)
+    )
+)]
+pub async fn title_photos_handler(
+    State(s): State<Arc<ScraperService>>,
+    Path(id): Path<String>,
+    Query(pq): Query<PaginationQuery>,
+) -> Result<Json<TitlePhotos>, AppError> {
+    let page = pq.page.unwrap_or(1);
+    Ok(Json(s.get_title_photos(id, page).await?))
+}
+
+#[utoipa::path(
+    get,
     path = "/titles/search",
     tag = "Titles",
     summary = "Search Titles",

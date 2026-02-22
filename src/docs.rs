@@ -4,7 +4,15 @@ use utoipa::OpenApi;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(title_search_handler, people_search_handler, article_search_handler, title_details_handler),
+    paths(
+        title_search_handler,
+        people_search_handler,
+        article_search_handler,
+        title_details_handler,
+        title_episodes_handler,
+        title_cast_handler,
+        title_photos_handler,
+    ),
     components(schemas(
         ArticleCategory,
         ArticleSearchQuery,
@@ -34,6 +42,10 @@ use utoipa::OpenApi;
         WhereToWatch,
         CastMember,
         Recommendation,
+        Episode,
+        TitleCast,
+        TitlePhotos,
+        PaginationQuery,
     )),
     tags(
         (name = "Titles", description = "Endpoints for finding and retrieving details about Dramas, Movies, and TV Shows."),

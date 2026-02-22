@@ -2,14 +2,18 @@ use crate::models::Image;
 use scraper::{ElementRef, Selector};
 
 pub fn extract_img(el: &ElementRef) -> Option<Image> {
-    el.select(&Selector::parse("img").unwrap())
-        .next()
-        .and_then(|img| {
-            img.value()
-                .attr("data-src")
-                .or(img.value().attr("src"))
-                .map(|s| Image::from(s.to_string()))
-        })
+    let img_node = if el.value().name() == "img" {
+        Some(*el)
+    } else {
+        el.select(&Selector::parse("img").unwrap()).next()
+    };
+
+    img_node.and_then(|img| {
+        img.value()
+            .attr("data-src")
+            .or(img.value().attr("src"))
+            .map(|s| Image::from(s.to_string()))
+    })
 }
 
 pub fn clean_text(s: &str) -> String {

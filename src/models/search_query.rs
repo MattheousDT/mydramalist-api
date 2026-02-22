@@ -96,3 +96,12 @@ pub struct ArticleSearchQuery {
     #[param(example = "publish_date")]
     pub sort: Option<ArticleSort>,
 }
+
+#[derive(Debug, Deserialize, IntoParams, ToSchema)]
+#[into_params(parameter_in = Query)]
+/// Standard pagination query parameters.
+pub struct PaginationQuery {
+    /// The page number to retrieve.
+    #[param(example = 1)]
+    pub page: Option<i32>,
+}

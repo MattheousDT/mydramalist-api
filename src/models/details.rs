@@ -109,7 +109,7 @@ pub struct Statistics {
 
     /// Total number of users who rated the title.
     #[schema(example = 61286)]
-    pub users_scored: Option<i32>,
+    pub votes: Option<i32>,
 
     /// Total number of users who have added this title to their lists.
     #[schema(example = 132894)]
@@ -142,6 +142,15 @@ pub struct CrewMember {
     /// Full name of the crew member.
     #[schema(example = "Kim Won Suk")]
     pub name: String,
+
+    /// The role or job of the crew member (e.g., Director, Screenwriter).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[schema(example = "Director")]
+    pub job: Option<String>,
+
+    /// Profile image of the crew member.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image: Option<Image>,
 }
 
 /// A descriptive tag applied to the title.
@@ -185,11 +194,15 @@ pub struct CastMember {
 
     /// Name of the character played.
     #[schema(example = "O Ae Sun | Yang Geum Myeong")]
-    pub role_name: Option<String>,
+    pub character: Option<String>,
+
+    /// Unique identifier for the character (if available).
+    #[schema(example = "cho-sang-gu")]
+    pub character_id: Option<String>,
 
     /// Role classification (e.g., Main Role, Support Role).
     #[schema(example = "Main Role")]
-    pub role_type: Option<String>,
+    pub role: Option<String>,
 
     /// Portrait images of the cast member.
     pub image: Option<Image>,

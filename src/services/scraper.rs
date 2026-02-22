@@ -73,6 +73,57 @@ impl ScraperService {
         Ok(results)
     }
 
+    #[instrument(skip(self), fields(search_type = "title_episodes"))]
+    pub async fn get_title_episodes(&self, id: String) -> Result<Vec<Episode>> {
+        let url = format!("https://mydramalist.com/{}/episodes", id);
+        self.perform_search("Episodes", url, MdlParser::parse_title_episodes)
+            .await
+    }
+
+    #[instrument(skip(self), fields(search_type = "title_cast"))]
+    pub async fn get_title_cast(&self, id: String) -> Result<TitleCast> {
+        let url = format!("https://mydramalist.com/{}/cast", id);
+
+        let label = "Cast";
+        info!(target: "scraper", "[{}] Initiating search: {}", label, url);
+
+        if let Some(cached_html) = self.html_cache.get(&url).await {
+            debug!(target: "scraper", "[{}] Cache Hit", label);
+            return Ok(MdlParser::parse_title_cast(&cached_html));
+        }
+
+        debug!(target: "scraper", "[{}] Cache Miss. Fetching from MDL...", label);
+        let response = self.client.get(&url).send().await?;
+        let html = response.text().await?;
+
+        let results = MdlParser::parse_title_cast(&html);
+        self.html_cache.insert(url, html.to_string()).await;
+
+        Ok(results)
+    }
+
+    #[instrument(skip(self), fields(search_type = "title_photos"))]
+    pub async fn get_title_photos(&self, id: String, page: i32) -> Result<TitlePhotos> {
+        let url = format!("https://mydramalist.com/{}/photos?page={}", id, page);
+
+        let label = "Photos";
+        info!(target: "scraper", "[{}] Initiating search: {}", label, url);
+
+        if let Some(cached_html) = self.html_cache.get(&url).await {
+            debug!(target: "scraper", "[{}] Cache Hit", label);
+            return Ok(MdlParser::parse_title_photos(&cached_html));
+        }
+
+        debug!(target: "scraper", "[{}] Cache Miss. Fetching from MDL...", label);
+        let response = self.client.get(&url).send().await?;
+        let html = response.text().await?;
+
+        let results = MdlParser::parse_title_photos(&html);
+        self.html_cache.insert(url, html.to_string()).await;
+
+        Ok(results)
+    }
+
     #[instrument(skip(self), fields(search_type = "titles"))]
     pub async fn search_titles(&self, query: TitleSearchQuery) -> Result<Vec<TitleSearchResult>> {
         let url = MdlUrlBuilder::search_titles(&query);

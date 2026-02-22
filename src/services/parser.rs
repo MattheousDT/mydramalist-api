@@ -1,4 +1,7 @@
+pub mod cast;
 pub mod details;
+pub mod episodes;
+pub mod photos;
 pub mod search;
 pub mod utils;
 
@@ -19,5 +22,17 @@ impl MdlParser {
 
     pub fn parse_title_details(html: &str, title_id: &str) -> Option<crate::models::TitleDetails> {
         details::parse_title_details(html, title_id)
+    }
+
+    pub fn parse_title_episodes(html: &str) -> Vec<crate::models::Episode> {
+        episodes::parse_title_episodes(html)
+    }
+
+    pub fn parse_title_cast(html: &str) -> crate::models::TitleCast {
+        cast::parse_title_cast(html)
+    }
+
+    pub fn parse_title_photos(html: &str) -> crate::models::TitlePhotos {
+        photos::parse_title_photos(html)
     }
 }

@@ -14,8 +14,10 @@ use utoipa::OpenApi;
         title_recommendations_handler,
         title_reviews_handler,
         title_search_handler,
+        title_statistics_handler,
     ),
     components(schemas(
+        AgeStat,
         ArticleCategory,
         ArticleSearchQuery,
         ArticleSearchResult,
@@ -54,8 +56,10 @@ use utoipa::OpenApi;
         TitleSearchQuery,
         TitleSearchResult,
         TitleSort,
+        TitleStatistics,
         TVShowFormat,
         Type,
+        WatchStatusStats,
         WhereToWatch,
     )),
     tags(

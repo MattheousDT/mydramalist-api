@@ -32,6 +32,26 @@ pub async fn title_details_handler(
 
 #[utoipa::path(
     get,
+    path = "/titles/{id}/statistics",
+    tag = "Titles",
+    summary = "Get Title Statistics",
+    description = "Retrieves statistical data for a title, including rating trends, user activity, and status distribution.",
+    params(
+        ("id" = String, Path, description = "MyDramaList Title ID", example = "49231-move-to-heaven")
+    ),
+    responses(
+        (status = 200, description = "Statistics successfully retrieved", body = TitleStatistics)
+    )
+)]
+pub async fn title_statistics_handler(
+    State(s): State<Arc<ScraperService>>,
+    Path(id): Path<String>,
+) -> Result<Json<TitleStatistics>, AppError> {
+    Ok(Json(s.get_title_statistics(id).await?))
+}
+
+#[utoipa::path(
+    get,
     path = "/titles/{id}/episodes",
     tag = "Titles",
     summary = "Get Title Episodes",

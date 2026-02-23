@@ -19,6 +19,10 @@ async fn main() {
         .route("/titles/search", get(handlers::title_search_handler))
         .route("/titles/{id}", get(handlers::title_details_handler))
         .route(
+            "/titles/{id}/statistics",
+            get(handlers::title_statistics_handler),
+        )
+        .route(
             "/titles/{id}/episodes",
             get(handlers::title_episodes_handler),
         )

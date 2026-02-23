@@ -5,6 +5,7 @@ pub mod photos;
 pub mod recommendations;
 pub mod reviews;
 pub mod search;
+pub mod statistics;
 pub mod utils;
 
 pub struct MdlParser;
@@ -44,5 +45,9 @@ impl MdlParser {
 
     pub fn parse_title_recommendations(html: &str) -> crate::models::PaginatedRecommendations {
         recommendations::parse_title_recommendations(html)
+    }
+
+    pub fn parse_title_statistics(html: &str, id: &str) -> crate::models::TitleStatistics {
+        statistics::parse_title_statistics(html, id)
     }
 }

@@ -10,6 +10,8 @@ static TAG_ID_RE: LazyLock<Regex> =
 static VIEW_ALL_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\((\d+)\)").expect("Invalid Regex"));
 static NUMBER_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[^\d.]").expect("Invalid Regex"));
+static WHITESPACE_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\s+").expect("Invalid Regex"));
 
 static FILM_TITLE_SEL: LazyLock<Selector> =
     LazyLock::new(|| Selector::parse(".film-title").unwrap());
@@ -110,7 +112,10 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
         if let Some(label) = label_el {
             let label_text = label.text().collect::<String>().trim().to_owned();
             let full_text = li.text().collect::<String>();
-            let value_text = full_text.replace(&label_text, "").trim().to_owned();
+            let value_text = WHITESPACE_RE
+                .replace_all(&full_text.replace(&label_text, ""), " ")
+                .trim()
+                .to_owned();
 
             match label_text.as_str() {
                 "Native Title:" => {

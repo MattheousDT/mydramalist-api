@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use strum::{Display, EnumString};
 use utoipa::ToSchema;
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString)]
+#[derive(
+    Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString, PartialEq, Eq,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(ascii_case_insensitive)]
 #[repr(i32)]
@@ -14,7 +16,9 @@ pub enum Type {
     TVShow = 86,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString)]
+#[derive(
+    Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString, PartialEq, Eq,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(ascii_case_insensitive)]
 #[repr(i32)]
@@ -42,7 +46,7 @@ pub enum Country {
     Singapore = 157,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 #[repr(i32)]
 pub enum Status {
@@ -51,7 +55,7 @@ pub enum Status {
     Completed = 3,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 #[repr(i32)]
 pub enum DramaFormat {
@@ -61,7 +65,7 @@ pub enum DramaFormat {
     DramaSpecial = 14,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 #[repr(i32)]
 pub enum MovieFormat {
@@ -74,7 +78,7 @@ pub enum MovieFormat {
     Other = 36,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 #[repr(i32)]
 pub enum TVShowFormat {
@@ -87,7 +91,7 @@ pub enum TVShowFormat {
     AnimatedProgram = 38,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, PartialEq, Eq)]
 #[serde(rename_all = "snake_case", untagged)]
 pub enum Format {
     Drama(DramaFormat),
@@ -95,7 +99,9 @@ pub enum Format {
     TV(TVShowFormat),
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString)]
+#[derive(
+    Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString, PartialEq, Eq,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(ascii_case_insensitive)]
 #[repr(i32)]
@@ -148,7 +154,9 @@ pub enum Genre {
     Zombies = 28,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString)]
+#[derive(
+    Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString, PartialEq, Eq,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(ascii_case_insensitive)]
 #[repr(i32)]
@@ -175,7 +183,7 @@ pub enum Nationality {
     Singaporean = 157,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 #[repr(i32)]
 pub enum Gender {
@@ -183,7 +191,9 @@ pub enum Gender {
     Female = 70,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString)]
+#[derive(
+    Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString, PartialEq, Eq,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(ascii_case_insensitive)]
 #[repr(i32)]
@@ -203,7 +213,7 @@ pub enum ArticleCategory {
     Trailer = 16,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "lowercase")]
 pub enum TitleSort {
@@ -222,7 +232,7 @@ pub enum TitleSort {
     RecentlyAdded,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "lowercase")]
 pub enum PeopleSort {
@@ -233,7 +243,7 @@ pub enum PeopleSort {
     RecentlyAdded,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "lowercase")]
 pub enum ArticleSort {

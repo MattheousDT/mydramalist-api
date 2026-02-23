@@ -9,7 +9,7 @@ static MDL_IMAGE_URL_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(\/[A-z0-9_]+)([a-z])(\.)").expect("Invalid Regex"));
 
 /// All the different image sizing that MDL offers.
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq, Eq)]
 pub struct Image {
     /// Approx. w150px - Used primarily on search results
     #[schema(example = "https://i.mydramalist.com/4v6zJ_4s.jpg")]
@@ -32,7 +32,7 @@ impl From<String> for Image {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq)]
 /// A concise summary of a Drama, Movie, or TV Show found in search results.
 pub struct TitleSearchResult {
     /// Unique identifier or slug
@@ -77,7 +77,7 @@ pub struct TitleSearchResult {
     pub poster: Option<Image>,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq, Eq)]
 /// A summary of an actor, actress, or crew member.
 pub struct PeopleSearchResult {
     /// Unique identifier or slug
@@ -106,7 +106,7 @@ pub struct PeopleSearchResult {
     pub portrait: Option<Image>,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq, Eq)]
 /// Metadata for editorials, news, or recaps posted on MyDramaList.
 pub struct ArticleSearchResult {
     /// Unique identifier for the article.

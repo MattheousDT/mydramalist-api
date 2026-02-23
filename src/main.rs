@@ -1,12 +1,5 @@
-mod docs;
-mod error;
-mod extractors;
-mod handlers;
-mod models;
-mod services;
-
-use crate::services::scraper::ScraperService;
 use axum::{Router, routing::get};
+use mydramalist_api::{docs, handlers, services::scraper::ScraperService};
 use std::sync::Arc;
 
 #[tokio::main]

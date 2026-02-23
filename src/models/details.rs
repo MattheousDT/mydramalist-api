@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 /// Comprehensive details about a specific Drama, Movie, or TV Show.
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq)]
 pub struct TitleDetails {
     /// Unique identifier or slug for the title.
     #[schema(example = "735043-life")]
@@ -101,7 +101,7 @@ pub struct TitleDetails {
 }
 
 /// Statistics and rankings from MyDramaList users.
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq)]
 pub struct Statistics {
     /// Average user score (out of 10).
     #[schema(example = 9.3)]
@@ -133,7 +133,7 @@ pub struct Statistics {
 }
 
 /// A person credited in the crew (e.g., Director, Screenwriter).
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq, Eq)]
 pub struct CrewMember {
     /// Unique identifier for the person.
     #[schema(example = "15891-kim-won-suk")]
@@ -154,7 +154,7 @@ pub struct CrewMember {
 }
 
 /// A descriptive tag applied to the title.
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq, Eq)]
 pub struct Tag {
     /// Internal MyDramaList tag ID.
     #[schema(example = 1470)]
@@ -166,7 +166,7 @@ pub struct Tag {
 }
 
 /// Information on where a title can be watched legally.
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq, Eq)]
 pub struct WhereToWatch {
     /// Name of the streaming service or store.
     #[schema(example = "Netflix")]
@@ -182,7 +182,7 @@ pub struct WhereToWatch {
 }
 
 /// A person credited in the cast.
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq, Eq)]
 pub struct CastMember {
     /// Unique identifier for the person.
     #[schema(example = "426-iu")]
@@ -209,7 +209,7 @@ pub struct CastMember {
 }
 
 /// A user-recommended title similar to the current one.
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq, Eq)]
 pub struct RecommendationPreview {
     /// Unique identifier for the recommended title.
     #[schema(example = "13544-reply-1988")]

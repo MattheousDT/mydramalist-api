@@ -1,36 +1,20 @@
-use crate::models::TitlePhotos;
-use crate::services::parser::utils::extract_img;
+use crate::models::PaginatedPhotos;
+use crate::services::parser::utils::{extract_img, parse_pagination};
 use scraper::{Html, Selector};
 
-pub fn parse_title_photos(html: &str) -> TitlePhotos {
+pub fn parse_title_photos(html: &str) -> PaginatedPhotos {
     let doc = Html::parse_document(html);
 
-    let photos = doc
+    let items = doc
         .select(&Selector::parse(".box-body img").unwrap())
         .filter_map(|el| extract_img(&el))
         .collect();
 
-    let pagination_sel = Selector::parse(".pagination .page-item").unwrap();
-    let mut current_page = 1;
-    let mut max_page = 1;
+    let (page, total_pages) = parse_pagination(&doc);
 
-    for li in doc.select(&pagination_sel) {
-        let is_active = li.value().classes().any(|c| c == "active");
-        let text = li.text().collect::<String>().trim().to_string();
-
-        if let Ok(num) = text.parse::<i32>() {
-            if is_active {
-                current_page = num;
-            }
-            if num > max_page {
-                max_page = num;
-            }
-        }
-    }
-
-    TitlePhotos {
-        photos,
-        page: current_page,
-        total_pages: max_page,
+    PaginatedPhotos {
+        items,
+        page,
+        total_pages,
     }
 }

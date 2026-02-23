@@ -2,6 +2,7 @@ pub mod cast;
 pub mod details;
 pub mod episodes;
 pub mod photos;
+pub mod recommendations;
 pub mod reviews;
 pub mod search;
 pub mod utils;
@@ -33,11 +34,15 @@ impl MdlParser {
         cast::parse_title_cast(html)
     }
 
-    pub fn parse_title_photos(html: &str) -> crate::models::TitlePhotos {
+    pub fn parse_title_photos(html: &str) -> crate::models::PaginatedPhotos {
         photos::parse_title_photos(html)
     }
 
-    pub fn parse_title_reviews(html: &str) -> crate::models::TitleReviews {
+    pub fn parse_title_reviews(html: &str) -> crate::models::PaginatedReviews {
         reviews::parse_title_reviews(html)
+    }
+
+    pub fn parse_title_recommendations(html: &str) -> crate::models::PaginatedRecommendations {
+        recommendations::parse_title_recommendations(html)
     }
 }

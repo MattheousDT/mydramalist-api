@@ -332,7 +332,7 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
             let id = a_el.value().attr("href")?.rsplit('/').next()?.to_string();
             let title = a_el.value().attr("title")?.to_string();
             let poster = extract_img(&el);
-            Some(Recommendation { id, title, poster })
+            Some(RecommendationPreview { id, title, poster })
         })
         .collect();
 

@@ -97,7 +97,7 @@ pub struct TitleDetails {
     pub photos_count: Option<i32>,
 
     /// Similar titles recommended by users.
-    pub recommendations: Vec<Recommendation>,
+    pub recommendations: Vec<RecommendationPreview>,
 }
 
 /// Statistics and rankings from MyDramaList users.
@@ -210,7 +210,7 @@ pub struct CastMember {
 
 /// A user-recommended title similar to the current one.
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
-pub struct Recommendation {
+pub struct RecommendationPreview {
     /// Unique identifier for the recommended title.
     #[schema(example = "13544-reply-1988")]
     pub id: String,

@@ -30,21 +30,6 @@ pub enum ReviewSort {
     Recent,
 }
 
-/// A paginated collection of user reviews for a title.
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
-pub struct TitleReviews {
-    /// List of review details.
-    pub reviews: Vec<Review>,
-
-    /// The current page number.
-    #[schema(example = 1)]
-    pub page: i32,
-
-    /// The total number of pages available.
-    #[schema(example = 27)]
-    pub total_pages: i32,
-}
-
 /// Detailed information about a single user review.
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
 pub struct Review {

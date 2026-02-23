@@ -81,14 +81,14 @@ pub async fn title_cast_handler(
         PaginationQuery
     ),
     responses(
-        (status = 200, description = "Photos successfully retrieved", body = TitlePhotos)
+        (status = 200, description = "Photos successfully retrieved", body = PaginatedPhotos)
     )
 )]
 pub async fn title_photos_handler(
     State(s): State<Arc<ScraperService>>,
     Path(id): Path<String>,
     Query(pq): Query<PaginationQuery>,
-) -> Result<Json<TitlePhotos>, AppError> {
+) -> Result<Json<PaginatedPhotos>, AppError> {
     let page = pq.page.unwrap_or(1);
     Ok(Json(s.get_title_photos(id, page).await?))
 }
@@ -104,15 +104,38 @@ pub async fn title_photos_handler(
         ReviewSearchQuery
     ),
     responses(
-        (status = 200, description = "Reviews successfully retrieved", body = TitleReviews)
+        (status = 200, description = "Reviews successfully retrieved", body = PaginatedReviews)
     )
 )]
 pub async fn title_reviews_handler(
     State(s): State<Arc<ScraperService>>,
     Path(id): Path<String>,
     Query(q): Query<ReviewSearchQuery>,
-) -> Result<Json<TitleReviews>, AppError> {
+) -> Result<Json<PaginatedReviews>, AppError> {
     Ok(Json(s.get_title_reviews(id, q).await?))
+}
+
+#[utoipa::path(
+    get,
+    path = "/titles/{id}/recommendations",
+    tag = "Titles",
+    summary = "Get Title Recommendations",
+    description = "Retrieves recommendations for a specific title using its MyDramaList ID. Supports pagination.",
+    params(
+        ("id" = String, Path, description = "MyDramaList Title ID", example = "49231-move-to-heaven"),
+        PaginationQuery
+    ),
+    responses(
+        (status = 200, description = "Recommendations successfully retrieved", body = PaginatedRecommendations)
+    )
+)]
+pub async fn title_recommendations_handler(
+    State(s): State<Arc<ScraperService>>,
+    Path(id): Path<String>,
+    Query(pq): Query<PaginationQuery>,
+) -> Result<Json<PaginatedRecommendations>, AppError> {
+    let page = pq.page.unwrap_or(1);
+    Ok(Json(s.get_title_recommendations(id, page).await?))
 }
 
 #[utoipa::path(

@@ -1,5 +1,5 @@
-use crate::models::{Review, ReviewAuthor, ReviewScores, ReviewStatus, TitleReviews};
-use crate::services::parser::utils::{clean_text, extract_img, from_scraped_str};
+use crate::models::{PaginatedReviews, Review, ReviewAuthor, ReviewScores, ReviewStatus};
+use crate::services::parser::utils::{clean_text, extract_img, from_scraped_str, parse_pagination};
 use regex::Regex;
 use scraper::{ElementRef, Html, Selector};
 use std::sync::LazyLock;
@@ -11,7 +11,7 @@ static EPISODES_SEEN_RE: LazyLock<Regex> =
 static NUMBER_ONLY_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\d+").expect("Invalid Regex"));
 
-pub fn parse_title_reviews(html: &str) -> TitleReviews {
+pub fn parse_title_reviews(html: &str) -> PaginatedReviews {
     let doc = Html::parse_document(html);
 
     let review_sel = Selector::parse(".review").unwrap();
@@ -27,7 +27,7 @@ pub fn parse_title_reviews(html: &str) -> TitleReviews {
     let comments_sel = Selector::parse(".fa-comments-alt").unwrap();
     let spoiler_sel = Selector::parse(".review-spoiler").unwrap();
 
-    let reviews = doc
+    let items = doc
         .select(&review_sel)
         .filter_map(|el| {
             let id = el
@@ -173,27 +173,11 @@ pub fn parse_title_reviews(html: &str) -> TitleReviews {
         })
         .collect();
 
-    let pagination_sel = Selector::parse(".pagination .page-item").unwrap();
-    let mut current_page = 1;
-    let mut max_page = 1;
+    let (page, total_pages) = parse_pagination(&doc);
 
-    for li in doc.select(&pagination_sel) {
-        let is_active = li.value().classes().any(|c| c == "active");
-        let text = li.text().collect::<String>().trim().to_string();
-
-        if let Ok(num) = text.parse::<i32>() {
-            if is_active {
-                current_page = num;
-            }
-            if num > max_page {
-                max_page = num;
-            }
-        }
-    }
-
-    TitleReviews {
-        reviews,
-        page: current_page,
-        total_pages: max_page,
+    PaginatedReviews {
+        items,
+        page,
+        total_pages,
     }
 }

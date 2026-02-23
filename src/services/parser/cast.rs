@@ -1,27 +1,33 @@
+use super::utils::{extract_character_info, extract_img};
 use crate::models::{CastMember, CrewMember, TitleCast};
 use scraper::{ElementRef, Html, Selector};
+use std::sync::LazyLock;
 
-use super::utils::{clean_text, extract_img};
+static BOX_BODY_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".box.cast-credits .box-body").unwrap());
+static HEADER_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse("h3.header").unwrap());
+static LIST_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse("ul.list").unwrap());
+static LIST_ITEM_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse("li.list-item").unwrap());
+static TEXT_PRIMARY_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse("a.text-primary").unwrap());
+static TEXT_MUTED_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse("small.text-muted").unwrap());
 
 pub fn parse_title_cast(html: &str) -> TitleCast {
     let doc = Html::parse_document(html);
-    let box_body_sel = Selector::parse(".box.cast-credits .box-body").unwrap();
-    let header_sel = Selector::parse("h3.header").unwrap();
-    let list_sel = Selector::parse("ul.list").unwrap();
-    let list_item_sel = Selector::parse("li.list-item").unwrap();
-
     let mut cast = Vec::new();
     let mut crew = Vec::new();
 
-    if let Some(box_body) = doc.select(&box_body_sel).next() {
+    if let Some(box_body) = doc.select(&*BOX_BODY_SEL).next() {
         let mut current_category = String::new();
 
         for child in box_body.children() {
             if let Some(el) = ElementRef::wrap(child) {
-                if el.value().name() == "h3" && header_sel.matches(&el) {
-                    current_category = clean_text(&el.text().collect::<String>());
-                } else if el.value().name() == "ul" && list_sel.matches(&el) {
-                    for li in el.select(&list_item_sel) {
+                if el.value().name() == "h3" && HEADER_SEL.matches(&el) {
+                    current_category = el.text().collect::<String>().trim().to_owned();
+                } else if el.value().name() == "ul" && LIST_SEL.matches(&el) {
+                    for li in el.select(&*LIST_ITEM_SEL) {
                         let is_crew_category = [
                             "Cinematography",
                             "Composer",
@@ -52,10 +58,8 @@ pub fn parse_title_cast(html: &str) -> TitleCast {
 }
 
 fn parse_cast_member(el: &ElementRef, category: &str) -> Option<CastMember> {
-    let name_el = el
-        .select(&Selector::parse("a.text-primary").unwrap())
-        .next()?;
-    let name = clean_text(&name_el.text().collect::<String>());
+    let name_el = el.select(&*TEXT_PRIMARY_SEL).next()?;
+    let name = name_el.text().collect::<String>().trim().to_owned();
     let person_id = name_el
         .value()
         .attr("href")?
@@ -64,28 +68,12 @@ fn parse_cast_member(el: &ElementRef, category: &str) -> Option<CastMember> {
         .to_string();
 
     let image = extract_img(el);
-
-    let mut character = None;
-    let mut character_id = None;
-
-    // Find the character small tag (any small tag that isn't the role/text-muted)
-    for small in el.select(&Selector::parse("small").unwrap()) {
-        if !small.value().classes().any(|c| c == "text-muted") {
-            character = Some(clean_text(&small.text().collect::<String>()));
-
-            if let Some(a) = small.select(&Selector::parse("a").unwrap()).next() {
-                if let Some(href) = a.value().attr("href") {
-                    character_id = Some(href.trim_start_matches("/character/").to_string());
-                }
-            }
-            break;
-        }
-    }
+    let (character, character_id) = extract_character_info(el);
 
     let role = el
-        .select(&Selector::parse("small.text-muted").unwrap())
+        .select(&*TEXT_MUTED_SEL)
         .next()
-        .map(|e| clean_text(&e.text().collect::<String>()))
+        .map(|e| e.text().collect::<String>().trim().to_owned())
         .unwrap_or_else(|| category.to_string());
 
     Some(CastMember {
@@ -99,10 +87,8 @@ fn parse_cast_member(el: &ElementRef, category: &str) -> Option<CastMember> {
 }
 
 fn parse_crew_member(el: &ElementRef, job: &str) -> Option<CrewMember> {
-    let name_el = el
-        .select(&Selector::parse("a.text-primary").unwrap())
-        .next()?;
-    let name = clean_text(&name_el.text().collect::<String>());
+    let name_el = el.select(&*TEXT_PRIMARY_SEL).next()?;
+    let name = name_el.text().collect::<String>().trim().to_owned();
     let id = name_el
         .value()
         .attr("href")?

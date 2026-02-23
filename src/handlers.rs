@@ -1,7 +1,7 @@
-use crate::{error::AppError, models::*, services::scraper::ScraperService};
+use crate::{error::AppError, extractors::Query, models::*, services::scraper::ScraperService};
 use axum::{
     Json,
-    extract::{Path, Query, State},
+    extract::{Path, State},
 };
 use std::sync::Arc;
 
@@ -23,8 +23,7 @@ pub async fn title_details_handler(
     State(s): State<Arc<ScraperService>>,
     Path(id): Path<String>,
 ) -> Result<Json<TitleDetails>, AppError> {
-    let details = s.get_title_details(id.clone()).await?;
-    match details {
+    match s.get_title_details(id.clone()).await? {
         Some(d) => Ok(Json(d)),
         None => Err(AppError::NotFound(format!("Title '{}' not found", id))),
     }
@@ -47,7 +46,10 @@ pub async fn title_statistics_handler(
     State(s): State<Arc<ScraperService>>,
     Path(id): Path<String>,
 ) -> Result<Json<TitleStatistics>, AppError> {
-    Ok(Json(s.get_title_statistics(id).await?))
+    match s.get_title_statistics(id.clone()).await? {
+        Some(stats) => Ok(Json(stats)),
+        None => Err(AppError::NotFound(format!("Title '{}' not found", id))),
+    }
 }
 
 #[utoipa::path(
@@ -67,7 +69,10 @@ pub async fn title_episodes_handler(
     State(s): State<Arc<ScraperService>>,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<Episode>>, AppError> {
-    Ok(Json(s.get_title_episodes(id).await?))
+    match s.get_title_episodes(id.clone()).await? {
+        Some(eps) => Ok(Json(eps)),
+        None => Err(AppError::NotFound(format!("Title '{}' not found", id))),
+    }
 }
 
 #[utoipa::path(
@@ -87,7 +92,10 @@ pub async fn title_cast_handler(
     State(s): State<Arc<ScraperService>>,
     Path(id): Path<String>,
 ) -> Result<Json<TitleCast>, AppError> {
-    Ok(Json(s.get_title_cast(id).await?))
+    match s.get_title_cast(id.clone()).await? {
+        Some(cast) => Ok(Json(cast)),
+        None => Err(AppError::NotFound(format!("Title '{}' not found", id))),
+    }
 }
 
 #[utoipa::path(
@@ -110,7 +118,10 @@ pub async fn title_photos_handler(
     Query(pq): Query<PaginationQuery>,
 ) -> Result<Json<PaginatedPhotos>, AppError> {
     let page = pq.page.unwrap_or(1);
-    Ok(Json(s.get_title_photos(id, page).await?))
+    match s.get_title_photos(id.clone(), page).await? {
+        Some(photos) => Ok(Json(photos)),
+        None => Err(AppError::NotFound(format!("Title '{}' not found", id))),
+    }
 }
 
 #[utoipa::path(
@@ -132,7 +143,10 @@ pub async fn title_reviews_handler(
     Path(id): Path<String>,
     Query(q): Query<ReviewSearchQuery>,
 ) -> Result<Json<PaginatedReviews>, AppError> {
-    Ok(Json(s.get_title_reviews(id, q).await?))
+    match s.get_title_reviews(id.clone(), q).await? {
+        Some(reviews) => Ok(Json(reviews)),
+        None => Err(AppError::NotFound(format!("Title '{}' not found", id))),
+    }
 }
 
 #[utoipa::path(
@@ -155,7 +169,10 @@ pub async fn title_recommendations_handler(
     Query(pq): Query<PaginationQuery>,
 ) -> Result<Json<PaginatedRecommendations>, AppError> {
     let page = pq.page.unwrap_or(1);
-    Ok(Json(s.get_title_recommendations(id, page).await?))
+    match s.get_title_recommendations(id.clone(), page).await? {
+        Some(recs) => Ok(Json(recs)),
+        None => Err(AppError::NotFound(format!("Title '{}' not found", id))),
+    }
 }
 
 #[utoipa::path(
@@ -166,13 +183,13 @@ pub async fn title_recommendations_handler(
     description = "Search for dramas, movies, and TV shows using various advanced filters including genres, ratings, status, and release dates.",
     params(TitleSearchQuery),
     responses(
-        (status = 200, description = "A list of matching titles", body = Vec<TitleSearchResult>)
+        (status = 200, description = "A list of matching titles", body = PaginatedTitleResults)
     )
 )]
 pub async fn title_search_handler(
     State(s): State<Arc<ScraperService>>,
     Query(q): Query<TitleSearchQuery>,
-) -> Result<Json<Vec<TitleSearchResult>>, AppError> {
+) -> Result<Json<PaginatedTitleResults>, AppError> {
     Ok(Json(s.search_titles(q).await?))
 }
 
@@ -184,13 +201,13 @@ pub async fn title_search_handler(
     description = "Search for actors, actresses, and production staff by name, nationality, and gender.",
     params(PeopleSearchQuery),
     responses(
-        (status = 200, description = "A list of matching people", body = Vec<PeopleSearchResult>)
+        (status = 200, description = "A list of matching people", body = PaginatedPeopleResults)
     )
 )]
 pub async fn people_search_handler(
     State(s): State<Arc<ScraperService>>,
     Query(q): Query<PeopleSearchQuery>,
-) -> Result<Json<Vec<PeopleSearchResult>>, AppError> {
+) -> Result<Json<PaginatedPeopleResults>, AppError> {
     Ok(Json(s.search_people(q).await?))
 }
 
@@ -202,12 +219,12 @@ pub async fn people_search_handler(
     description = "Search for editorials, news, interviews, and recaps published on MyDramaList.",
     params(ArticleSearchQuery),
     responses(
-        (status = 200, description = "A list of matching articles", body = Vec<ArticleSearchResult>)
+        (status = 200, description = "A list of matching articles", body = PaginatedArticleResults)
     )
 )]
 pub async fn article_search_handler(
     State(s): State<Arc<ScraperService>>,
     Query(q): Query<ArticleSearchQuery>,
-) -> Result<Json<Vec<ArticleSearchResult>>, AppError> {
+) -> Result<Json<PaginatedArticleResults>, AppError> {
     Ok(Json(s.search_articles(q).await?))
 }

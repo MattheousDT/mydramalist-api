@@ -1,39 +1,45 @@
 use serde::{Deserialize, Serialize};
-use strum::Display;
+use strum::{Display, EnumString};
 use utoipa::ToSchema;
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString)]
 #[serde(rename_all = "snake_case")]
+#[strum(ascii_case_insensitive)]
 #[repr(i32)]
 pub enum Type {
-    #[serde(alias = "Drama")]
     Drama = 68,
-    #[serde(alias = "Movie")]
     Movie = 77,
-    #[serde(rename = "tv_show", alias = "TV Show")]
+    #[serde(rename = "tv_show")]
+    #[strum(serialize = "tv show", serialize = "tv_show")]
     TVShow = 86,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString)]
 #[serde(rename_all = "snake_case")]
+#[strum(ascii_case_insensitive)]
 #[repr(i32)]
 pub enum Country {
-    #[serde(alias = "Japanese", alias = "Japan")]
+    #[strum(serialize = "japan", serialize = "japanese")]
     Japan = 1,
-    #[serde(alias = "Chinese", alias = "China")]
+    #[strum(serialize = "china", serialize = "chinese")]
     China = 2,
-    #[serde(alias = "South Korean", alias = "Korean", alias = "South Korea")]
+    #[strum(
+        serialize = "south korea",
+        serialize = "south korean",
+        serialize = "korea",
+        serialize = "korean"
+    )]
     SouthKorea = 3,
-    #[serde(alias = "Taiwanese", alias = "Taiwan")]
-    Taiwan = 4,
-    #[serde(alias = "Hong Kong")]
-    HongKong = 5,
-    #[serde(alias = "Thai", alias = "Thailand")]
+    #[strum(serialize = "hong kong")]
+    HongKong = 4,
+    #[strum(serialize = "taiwan", serialize = "taiwanese")]
+    Taiwan = 5,
+    #[strum(serialize = "thailand", serialize = "thai")]
     Thailand = 6,
-    #[serde(alias = "Filipino", alias = "Philippines")]
-    Philippines = 7,
-    #[serde(alias = "Singaporean", alias = "Singapore")]
-    Singapore = 8,
+    #[strum(serialize = "philippines", serialize = "filipino")]
+    Philippines = 140,
+    #[strum(serialize = "singapore", serialize = "singaporean")]
+    Singapore = 157,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display)]
@@ -89,8 +95,9 @@ pub enum Format {
     TV(TVShowFormat),
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString)]
 #[serde(rename_all = "snake_case")]
+#[strum(ascii_case_insensitive)]
 #[repr(i32)]
 pub enum Genre {
     Action = 1,
@@ -112,6 +119,7 @@ pub enum Genre {
     Law = 18,
     Life = 22,
     Manga = 44,
+    #[strum(serialize = "martial arts")]
     MartialArts = 26,
     Mature = 40,
     Medical = 30,
@@ -123,6 +131,7 @@ pub enum Genre {
     Psychological = 15,
     Romance = 19,
     School = 23,
+    #[strum(serialize = "sci-fi")]
     SciFi = 27,
     Sitcom = 36,
     Sports = 31,
@@ -139,17 +148,30 @@ pub enum Genre {
     Zombies = 28,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString)]
 #[serde(rename_all = "snake_case")]
+#[strum(ascii_case_insensitive)]
 #[repr(i32)]
 pub enum Nationality {
+    #[strum(serialize = "japan", serialize = "japanese")]
     Japanese = 1,
+    #[strum(serialize = "china", serialize = "chinese")]
     Chinese = 2,
+    #[strum(
+        serialize = "south korea",
+        serialize = "south korean",
+        serialize = "korean"
+    )]
     Korean = 3,
+    #[strum(serialize = "hong kong", serialize = "hong konger")]
     HongKonger = 4,
+    #[strum(serialize = "taiwan", serialize = "taiwanese")]
     Taiwanese = 5,
+    #[strum(serialize = "thailand", serialize = "thai")]
     Thai = 6,
+    #[strum(serialize = "philippines", serialize = "filipino")]
     Filipino = 140,
+    #[strum(serialize = "singapore", serialize = "singaporean")]
     Singaporean = 157,
 }
 
@@ -161,31 +183,23 @@ pub enum Gender {
     Female = 70,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString)]
+#[serde(rename_all = "snake_case")]
+#[strum(ascii_case_insensitive)]
 #[repr(i32)]
 pub enum ArticleCategory {
-    #[serde(alias = "Interviews")]
     Interviews = 1,
-    #[serde(alias = "Editorials")]
     Editorials = 2,
-    #[serde(alias = "MDL")]
     MDL = 3,
-    #[serde(alias = "News")]
     News = 4,
-    #[serde(alias = "Recaps")]
     Recaps = 5,
-    #[serde(alias = "Announcement")]
     Announcement = 7,
-    #[serde(alias = "Articles")]
     Articles = 9,
-    #[serde(alias = "K-Pop")]
+    #[strum(serialize = "k-pop")]
     KPop = 10,
-    #[serde(alias = "Celebrity")]
     Celebrity = 12,
-    #[serde(alias = "K-Drama")]
+    #[strum(serialize = "k-drama")]
     KDrama = 14,
-    #[serde(alias = "Trailer")]
     Trailer = 16,
 }
 

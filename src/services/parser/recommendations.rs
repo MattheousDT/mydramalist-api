@@ -1,5 +1,5 @@
 use crate::models::{PaginatedRecommendations, Recommendation};
-use crate::services::parser::utils::{clean_text, extract_img, parse_pagination};
+use crate::services::parser::utils::{extract_img, parse_pagination};
 use regex::Regex;
 use scraper::{ElementRef, Html, Selector};
 use std::sync::LazyLock;
@@ -8,22 +8,25 @@ static READ_MORE_RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"Read recommendations by (\d+) more users?").expect("Invalid Regex")
 });
 
+static BOX_BODY_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".box-body.b-t[id^='rec_']").unwrap());
+static TITLE_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse("b a").unwrap());
+static RATING_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse(".score").unwrap());
+static CONTENT_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse(".recs-body").unwrap());
+static AUTHOR_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".recs-author a").unwrap());
+static LIKE_CNT_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse(".like-cnt").unwrap());
+static MORE_RECS_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".more-recs-container a").unwrap());
+
 pub fn parse_title_recommendations(html: &str) -> PaginatedRecommendations {
     let doc = Html::parse_document(html);
 
-    let box_body_sel = Selector::parse(".box-body.b-t[id^='rec_']").unwrap();
-    let title_sel = Selector::parse("b a").unwrap();
-    let rating_sel = Selector::parse(".score").unwrap();
-    let content_sel = Selector::parse(".recs-body").unwrap();
-    let author_sel = Selector::parse(".recs-author a").unwrap();
-    let like_cnt_sel = Selector::parse(".like-cnt").unwrap();
-    let more_recs_sel = Selector::parse(".more-recs-container a").unwrap();
-
     let items = doc
-        .select(&box_body_sel)
+        .select(&*BOX_BODY_SEL)
         .filter_map(|el| {
-            let title_el = el.select(&title_sel).next()?;
-            let title = clean_text(&title_el.text().collect::<String>());
+            let title_el = el.select(&*TITLE_SEL).next()?;
+            let title = title_el.text().collect::<String>().trim().to_owned();
             let id = title_el
                 .value()
                 .attr("href")?
@@ -34,11 +37,11 @@ pub fn parse_title_recommendations(html: &str) -> PaginatedRecommendations {
             let poster = extract_img(&el);
 
             let score = el
-                .select(&rating_sel)
+                .select(&*RATING_SEL)
                 .next()
                 .and_then(|e| e.text().collect::<String>().parse::<f32>().ok());
 
-            let content = if let Some(body) = el.select(&content_sel).next() {
+            let content = if let Some(body) = el.select(&*CONTENT_SEL).next() {
                 let mut content_parts = Vec::new();
                 for child in body.children() {
                     if let Some(element) = ElementRef::wrap(child) {
@@ -53,13 +56,13 @@ pub fn parse_title_recommendations(html: &str) -> PaginatedRecommendations {
                         }
                     }
                 }
-                clean_text(&content_parts.join(" "))
+                content_parts.join(" ").trim().to_owned()
             } else {
                 String::new()
             };
 
-            let author_el = el.select(&author_sel).next()?;
-            let author = clean_text(&author_el.text().collect::<String>());
+            let author_el = el.select(&*AUTHOR_SEL).next()?;
+            let author = author_el.text().collect::<String>().trim().to_owned();
             let author_id = author_el
                 .value()
                 .attr("href")?
@@ -68,13 +71,13 @@ pub fn parse_title_recommendations(html: &str) -> PaginatedRecommendations {
                 .to_string();
 
             let likes = el
-                .select(&like_cnt_sel)
+                .select(&*LIKE_CNT_SEL)
                 .next()
                 .and_then(|e| e.text().collect::<String>().parse::<i32>().ok())
                 .unwrap_or(0);
 
             let read_more_count = el
-                .select(&more_recs_sel)
+                .select(&*MORE_RECS_SEL)
                 .next()
                 .and_then(|e| {
                     let text = e.text().collect::<String>();

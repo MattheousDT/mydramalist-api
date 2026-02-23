@@ -1,5 +1,6 @@
 mod docs;
 mod error;
+mod extractors;
 mod handlers;
 mod models;
 mod services;

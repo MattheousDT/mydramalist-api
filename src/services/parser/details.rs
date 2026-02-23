@@ -1,9 +1,9 @@
+use super::utils::{extract_character_info, extract_img};
 use crate::models::*;
 use regex::Regex;
 use scraper::{Html, Selector};
+use std::str::FromStr;
 use std::sync::LazyLock;
-
-use super::utils::{clean_text, extract_img, from_scraped_str};
 
 static TAG_ID_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"th=(\d+)").expect("Invalid Regex"));
@@ -11,11 +11,51 @@ static VIEW_ALL_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\((\d+)\)").expect("Invalid Regex"));
 static NUMBER_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[^\d.]").expect("Invalid Regex"));
 
+static FILM_TITLE_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".film-title").unwrap());
+static FILM_SUBTITLE_SPAN_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".film-subtitle span").unwrap());
+static FILM_COVER_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".film-cover").unwrap());
+static SHOW_SYNOPSIS_SPAN_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".show-synopsis span").unwrap());
+static SHOW_DETAILS_LI_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".show-detailsxss ul.list li.list-item").unwrap());
+static B_INLINE_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse("b.inline").unwrap());
+static A_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse("a").unwrap());
+static MDL_AKA_TITLES_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".mdl-aka-titles").unwrap());
+static HFT_A_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse(".hft a").unwrap());
+static HFS_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse(".hfs").unwrap());
+static B_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse("b").unwrap());
+static WTS_ROW_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".box-body.wts .row.no-gutter").unwrap());
+static COL_XS_10_A_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".col-xs-10 a").unwrap());
+static COL_XS_10_DIV2_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".col-xs-10 div:nth-child(2)").unwrap());
+static CREDITS_LIST_ITEM_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".credits .list-item").unwrap());
+static CREDITS_LEFT_A_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".credits-left a").unwrap());
+static B_ITEMPROP_NAME_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse("b[itempropx=\"name\"]").unwrap());
+static SMALL_TEXT_MUTED_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse("small.text-muted").unwrap());
+static BOX_FOOTER_CAST_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".box-footer a[href$=\"/cast\"]").unwrap());
+static BOX_BODY_PHOTOS_IMG_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".box-body.photos img").unwrap());
+static BOX_TOOL_PHOTOS_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".box-tool a[href$=\"/photos\"]").unwrap());
+static RECS_ITEM_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".details-recommendations .rec-item").unwrap());
+
 pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
     let doc = Html::parse_document(html);
 
     let title = doc
-        .select(&Selector::parse(".film-title").unwrap())
+        .select(&*FILM_TITLE_SEL)
         .next()?
         .text()
         .collect::<String>()
@@ -23,7 +63,7 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
         .to_string();
 
     let year = doc
-        .select(&Selector::parse(".film-subtitle span").unwrap())
+        .select(&*FILM_SUBTITLE_SPAN_SEL)
         .next()
         .and_then(|e| {
             e.text()
@@ -35,14 +75,14 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
         .filter(|&y| y > 0);
 
     let poster = doc
-        .select(&Selector::parse(".film-cover").unwrap())
+        .select(&*FILM_COVER_SEL)
         .next()
         .and_then(|el| extract_img(&el));
 
     let synopsis = doc
-        .select(&Selector::parse(".show-synopsis span").unwrap())
+        .select(&*SHOW_SYNOPSIS_SPAN_SEL)
         .next()
-        .map(|e| e.text().collect::<String>().trim().to_string());
+        .map(|e| e.text().collect::<String>().trim().to_owned());
 
     let mut native_title = None;
     let mut aka = Vec::new();
@@ -65,36 +105,33 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
     let mut genres = Vec::new();
     let mut tags = Vec::new();
 
-    for li in doc.select(&Selector::parse(".show-detailsxss ul.list li.list-item").unwrap()) {
-        let label_el = li.select(&Selector::parse("b.inline").unwrap()).next();
+    for li in doc.select(&*SHOW_DETAILS_LI_SEL) {
+        let label_el = li.select(&*B_INLINE_SEL).next();
         if let Some(label) = label_el {
-            let label_text = label.text().collect::<String>().trim().to_string();
+            let label_text = label.text().collect::<String>().trim().to_owned();
             let full_text = li.text().collect::<String>();
-            let value_text = full_text.replace(&label_text, "").trim().to_string();
+            let value_text = full_text.replace(&label_text, "").trim().to_owned();
 
             match label_text.as_str() {
                 "Native Title:" => {
                     native_title = li
-                        .select(&Selector::parse("a").unwrap())
+                        .select(&*A_SEL)
                         .next()
-                        .map(|e| e.text().collect::<String>().trim().to_string());
+                        .map(|e| e.text().collect::<String>().trim().to_owned());
                 }
                 "Also Known As:" => {
-                    if let Some(aka_el) = li
-                        .select(&Selector::parse(".mdl-aka-titles").unwrap())
-                        .next()
-                    {
+                    if let Some(aka_el) = li.select(&*MDL_AKA_TITLES_SEL).next() {
                         aka = aka_el
                             .text()
                             .collect::<String>()
                             .split(',')
-                            .map(|s| s.trim().to_string())
+                            .map(|s| s.trim().to_owned())
                             .filter(|s| !s.is_empty())
                             .collect();
                     }
                 }
-                "Country:" => country = from_scraped_str::<Country>(&value_text),
-                "Type:" => r#type = from_scraped_str::<Type>(&value_text),
+                "Country:" => country = Country::from_str(&value_text).ok(),
+                "Type:" => r#type = Type::from_str(&value_text).ok(),
                 "Episodes:" => episodes = value_text.parse().ok(),
                 "Aired:" => aired = Some(value_text),
                 "Aired On:" => aired_on = Some(value_text),
@@ -105,15 +142,12 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
                         .split_whitespace()
                         .next()
                         .and_then(|s| s.parse().ok());
-                    votes = li
-                        .select(&Selector::parse(".hft a").unwrap())
-                        .next()
-                        .and_then(|e| {
-                            NUMBER_RE
-                                .replace_all(&e.text().collect::<String>(), "")
-                                .parse()
-                                .ok()
-                        });
+                    votes = li.select(&*HFT_A_SEL).next().and_then(|e| {
+                        NUMBER_RE
+                            .replace_all(&e.text().collect::<String>(), "")
+                            .parse()
+                            .ok()
+                    });
                 }
                 "Ranked:" => rank = NUMBER_RE.replace_all(&value_text, "").parse().ok(),
                 "Popularity:" => popularity = NUMBER_RE.replace_all(&value_text, "").parse().ok(),
@@ -121,18 +155,18 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
                 "Favorites:" => favorites = NUMBER_RE.replace_all(&value_text, "").parse().ok(),
                 "Original Network:" => {
                     original_network = li
-                        .select(&Selector::parse("a").unwrap())
-                        .map(|e| e.text().collect::<String>().trim().to_string())
+                        .select(&*A_SEL)
+                        .map(|e| e.text().collect::<String>().trim().to_owned())
                         .collect();
                 }
                 "Director:" => {
                     directors = li
-                        .select(&Selector::parse("a").unwrap())
+                        .select(&*A_SEL)
                         .filter_map(|e| {
                             let href = e.value().attr("href")?;
                             Some(CrewMember {
                                 id: href.rsplit('/').next()?.to_string(),
-                                name: e.text().collect::<String>().trim().to_string(),
+                                name: e.text().collect::<String>().trim().to_owned(),
                                 job: Some("Director".to_string()),
                                 image: None,
                             })
@@ -141,12 +175,12 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
                 }
                 "Screenwriter:" => {
                     screenwriters = li
-                        .select(&Selector::parse("a").unwrap())
+                        .select(&*A_SEL)
                         .filter_map(|e| {
                             let href = e.value().attr("href")?;
                             Some(CrewMember {
                                 id: href.rsplit('/').next()?.to_string(),
-                                name: e.text().collect::<String>().trim().to_string(),
+                                name: e.text().collect::<String>().trim().to_owned(),
                                 job: Some("Screenwriter".to_string()),
                                 image: None,
                             })
@@ -155,13 +189,13 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
                 }
                 "Genres:" => {
                     genres = li
-                        .select(&Selector::parse("a").unwrap())
-                        .filter_map(|e| from_scraped_str::<Genre>(&e.text().collect::<String>()))
+                        .select(&*A_SEL)
+                        .filter_map(|e| Genre::from_str(&e.text().collect::<String>().trim()).ok())
                         .collect();
                 }
                 "Tags:" => {
                     tags = li
-                        .select(&Selector::parse("a").unwrap())
+                        .select(&*A_SEL)
                         .filter_map(|e| {
                             let href = e.value().attr("href")?;
                             let id_caps = TAG_ID_RE.captures(href)?;
@@ -183,28 +217,22 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
     }
 
     let mut reviews_count = None;
-    for hfs in doc.select(&Selector::parse(".hfs").unwrap()) {
+    for hfs in doc.select(&*HFS_SEL) {
         let text = hfs.text().collect::<String>();
         if text.contains("Reviews:") {
-            reviews_count = hfs
-                .select(&Selector::parse("a").unwrap())
-                .next()
-                .and_then(|e| {
-                    NUMBER_RE
-                        .replace_all(&e.text().collect::<String>(), "")
-                        .parse()
-                        .ok()
-                });
+            reviews_count = hfs.select(&*A_SEL).next().and_then(|e| {
+                NUMBER_RE
+                    .replace_all(&e.text().collect::<String>(), "")
+                    .parse()
+                    .ok()
+            });
         } else if watchers.is_none() && text.contains("# of Watchers:") {
-            watchers = hfs
-                .select(&Selector::parse("b").unwrap())
-                .next()
-                .and_then(|e| {
-                    NUMBER_RE
-                        .replace_all(&e.text().collect::<String>(), "")
-                        .parse()
-                        .ok()
-                });
+            watchers = hfs.select(&*B_SEL).next().and_then(|e| {
+                NUMBER_RE
+                    .replace_all(&e.text().collect::<String>(), "")
+                    .parse()
+                    .ok()
+            });
         }
     }
 
@@ -219,17 +247,15 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
     };
 
     let where_to_watch = doc
-        .select(&Selector::parse(".box-body.wts .row.no-gutter").unwrap())
+        .select(&*WTS_ROW_SEL)
         .filter_map(|el| {
-            let a_el = el
-                .select(&Selector::parse(".col-xs-10 a").unwrap())
-                .next()?;
+            let a_el = el.select(&*COL_XS_10_A_SEL).next()?;
             let link = a_el.value().attr("href")?;
-            let name = a_el.text().collect::<String>().trim().to_string();
+            let name = a_el.text().collect::<String>().trim().to_owned();
             let service_type = el
-                .select(&Selector::parse(".col-xs-10 div:nth-child(2)").unwrap())
+                .select(&*COL_XS_10_DIV2_SEL)
                 .next()
-                .map(|e| e.text().collect::<String>().trim().to_string())
+                .map(|e| e.text().collect::<String>().trim().to_owned())
                 .unwrap_or_default();
 
             let full_link = if link.starts_with('/') {
@@ -247,42 +273,25 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
         .collect();
 
     let cast = doc
-        .select(&Selector::parse(".credits .list-item").unwrap())
+        .select(&*CREDITS_LIST_ITEM_SEL)
         .filter_map(|el| {
-            let a_el = el
-                .select(&Selector::parse(".credits-left a").unwrap())
-                .next()?;
+            let a_el = el.select(&*CREDITS_LEFT_A_SEL).next()?;
             let person_id = a_el.value().attr("href")?.rsplit('/').next()?.to_string();
             let image = extract_img(&el);
             let name = el
-                .select(&Selector::parse("b[itempropx=\"name\"]").unwrap())
+                .select(&*B_ITEMPROP_NAME_SEL)
                 .next()?
                 .text()
                 .collect::<String>()
                 .trim()
-                .to_string();
+                .to_owned();
 
-            let mut character = None;
-            let mut character_id = None;
-
-            // Extract Character Info (Same logic as cast parser)
-            for small in el.select(&Selector::parse("small").unwrap()) {
-                if !small.value().classes().any(|c| c == "text-muted") {
-                    character = Some(clean_text(&small.text().collect::<String>()));
-
-                    if let Some(a) = small.select(&Selector::parse("a").unwrap()).next() {
-                        if let Some(href) = a.value().attr("href") {
-                            character_id = Some(href.trim_start_matches("/character/").to_string());
-                        }
-                    }
-                    break;
-                }
-            }
+            let (character, character_id) = extract_character_info(&el);
 
             let role = el
-                .select(&Selector::parse("small.text-muted").unwrap())
+                .select(&*SMALL_TEXT_MUTED_SEL)
                 .next()
-                .map(|e| e.text().collect::<String>().trim().to_string());
+                .map(|e| e.text().collect::<String>().trim().to_owned());
 
             Some(CastMember {
                 person_id,
@@ -295,40 +304,34 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
         })
         .collect();
 
-    let cast_count = doc
-        .select(&Selector::parse(".box-footer a[href$=\"/cast\"]").unwrap())
-        .next()
-        .and_then(|e| {
-            let text = e.text().collect::<String>();
-            VIEW_ALL_RE
-                .captures(&text)
-                .and_then(|c| c.get(1))
-                .and_then(|m| m.as_str().parse().ok())
-        });
+    let cast_count = doc.select(&*BOX_FOOTER_CAST_SEL).next().and_then(|e| {
+        let text = e.text().collect::<String>();
+        VIEW_ALL_RE
+            .captures(&text)
+            .and_then(|c| c.get(1))
+            .and_then(|m| m.as_str().parse().ok())
+    });
 
     let photos = doc
-        .select(&Selector::parse(".box-body.photos img").unwrap())
+        .select(&*BOX_BODY_PHOTOS_IMG_SEL)
         .filter_map(|img| {
             let img_url = img.value().attr("data-src").or(img.value().attr("src"))?;
             Some(Image::from(img_url.to_string()))
         })
         .collect();
 
-    let photos_count = doc
-        .select(&Selector::parse(".box-tool a[href$=\"/photos\"]").unwrap())
-        .next()
-        .and_then(|e| {
-            let text = e.text().collect::<String>();
-            VIEW_ALL_RE
-                .captures(&text)
-                .and_then(|c| c.get(1))
-                .and_then(|m| m.as_str().parse().ok())
-        });
+    let photos_count = doc.select(&*BOX_TOOL_PHOTOS_SEL).next().and_then(|e| {
+        let text = e.text().collect::<String>();
+        VIEW_ALL_RE
+            .captures(&text)
+            .and_then(|c| c.get(1))
+            .and_then(|m| m.as_str().parse().ok())
+    });
 
     let recommendations = doc
-        .select(&Selector::parse(".details-recommendations .rec-item").unwrap())
+        .select(&*RECS_ITEM_SEL)
         .filter_map(|el| {
-            let a_el = el.select(&Selector::parse("a").unwrap()).next()?;
+            let a_el = el.select(&*A_SEL).next()?;
             let id = a_el.value().attr("href")?.rsplit('/').next()?.to_string();
             let title = a_el.value().attr("title")?.to_string();
             let poster = extract_img(&el);

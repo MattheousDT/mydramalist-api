@@ -1,22 +1,41 @@
 use crate::models::*;
 use regex::Regex;
 use scraper::{Html, Selector};
+use std::str::FromStr;
 use std::sync::LazyLock;
 
-use super::utils::{clean_text, extract_img, from_scraped_str};
+use super::utils::{extract_img, parse_pagination};
 
 static MDL_INFO_RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"([A-z\s]+) (Movie|TV Show|Drama) - (\d{4}|TBA)(?:, (\d+) episodes)?")
         .expect("Invalid Regex")
 });
 
-pub fn parse_title_search(html: &str) -> Vec<TitleSearchResult> {
-    let doc = Html::parse_document(html);
-    let box_sel = Selector::parse(".box").unwrap();
+static BOX_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse(".box").unwrap());
+static H6_A_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse("h6 a").unwrap());
+static SCORE_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse(".score").unwrap());
+static RANKING_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse(".ranking").unwrap());
+static TEXT_MUTED_P_P_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".text-muted + p + p").unwrap());
+static TEXT_MUTED_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".text-muted").unwrap());
+static P_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse("p").unwrap());
+static LIKE_CNTB_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse(".like-cntb").unwrap());
+static H6_PLUS_P_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse("h6 + p").unwrap());
+static CATEGORY_NAME_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".category-name").unwrap());
+static PUB_DATE_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse(".pub-date").unwrap());
+static LIKES_CNT_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse(".likes-cnt").unwrap());
+static COMMENTS_CNT_SEL: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".comments-cnt").unwrap());
 
-    doc.select(&box_sel)
+pub fn parse_title_search(html: &str) -> PaginatedTitleResults {
+    let doc = Html::parse_document(html);
+
+    let items = doc
+        .select(&*BOX_SEL)
         .filter_map(|el| {
-            let link = el.select(&Selector::parse("h6 a").unwrap()).next()?;
+            let link = el.select(&*H6_A_SEL).next()?;
             let href = link.value().attr("href")?;
             if href == "/search" || !href.contains('/') {
                 return None;
@@ -26,38 +45,38 @@ pub fn parse_title_search(html: &str) -> Vec<TitleSearchResult> {
             let title = link.text().collect();
 
             let rating = el
-                .select(&Selector::parse(".score").unwrap())
+                .select(&*SCORE_SEL)
                 .next()
                 .and_then(|e| e.text().collect::<String>().parse().ok());
 
             let ranking = el
-                .select(&Selector::parse(".ranking").unwrap())
+                .select(&*RANKING_SEL)
                 .next()
                 .and_then(|e| e.text().collect::<String>().parse().ok());
 
             let poster = extract_img(&el);
 
             let description = el
-                .select(&Selector::parse(".text-muted + p + p").unwrap())
+                .select(&*TEXT_MUTED_P_P_SEL)
                 .next()
-                .map(|e| clean_text(&e.text().collect::<String>()));
+                .map(|e| e.text().collect::<String>().trim().to_owned());
 
             let text = el
-                .select(&Selector::parse(".text-muted").unwrap())
+                .select(&*TEXT_MUTED_SEL)
                 .next()
-                .map(|e| clean_text(&e.text().collect::<String>()))
+                .map(|e| e.text().collect::<String>().trim().to_owned())
                 .unwrap();
 
             let caps = MDL_INFO_RE.captures(&text)?;
 
             let country = caps
                 .get(1)
-                .and_then(|m| from_scraped_str::<Country>(m.as_str()))
+                .and_then(|m| Country::from_str(m.as_str()).ok())
                 .unwrap();
 
             let r#type = caps
                 .get(2)
-                .and_then(|m| from_scraped_str::<Type>(m.as_str()))
+                .and_then(|m| Type::from_str(m.as_str()).ok())
                 .unwrap();
 
             let year = caps
@@ -81,36 +100,47 @@ pub fn parse_title_search(html: &str) -> Vec<TitleSearchResult> {
                 poster,
             })
         })
-        .collect()
+        .collect();
+
+    let (page, total_pages) = parse_pagination(&doc);
+
+    PaginatedTitleResults {
+        items,
+        page,
+        total_pages,
+    }
 }
 
-pub fn parse_people_search(html: &str) -> Vec<PeopleSearchResult> {
+pub fn parse_people_search(html: &str) -> PaginatedPeopleResults {
     let doc = Html::parse_document(html);
-    let box_sel = Selector::parse(".box").unwrap();
 
-    doc.select(&box_sel)
+    let items = doc
+        .select(&*BOX_SEL)
         .filter_map(|el| {
-            let link = el.select(&Selector::parse("h6 a").unwrap()).next()?;
+            let link = el.select(&*H6_A_SEL).next()?;
             let href = link.value().attr("href")?;
 
             let id = href.rsplit('/').next().unwrap().to_string();
             let name = link.text().collect();
 
             let nationality = el
-                .select(&Selector::parse(".text-muted").unwrap())
+                .select(&*TEXT_MUTED_SEL)
                 .next()
-                .map(|e| clean_text(&e.text().collect::<String>()));
+                .map(|e| e.text().collect::<String>().trim().to_owned());
 
             let bio = el
-                .select(&Selector::parse("p").unwrap())
+                .select(&*P_SEL)
                 .next()
-                .map(|e| clean_text(&e.text().collect::<String>()));
+                .map(|e| e.text().collect::<String>().trim().to_owned());
 
             let hearts = el
-                .select(&Selector::parse(".like-cntb").unwrap())
+                .select(&*LIKE_CNTB_SEL)
                 .next()
                 .map(|e| {
-                    clean_text(&e.text().collect::<String>())
+                    e.text()
+                        .collect::<String>()
+                        .trim()
+                        .to_owned()
                         .replace(",", "")
                         .parse()
                         .ok()
@@ -128,50 +158,72 @@ pub fn parse_people_search(html: &str) -> Vec<PeopleSearchResult> {
                 portrait,
             })
         })
-        .collect()
+        .collect();
+
+    let (page, total_pages) = parse_pagination(&doc);
+
+    PaginatedPeopleResults {
+        items,
+        page,
+        total_pages,
+    }
 }
 
-pub fn parse_article_search(html: &str) -> Vec<ArticleSearchResult> {
+pub fn parse_article_search(html: &str) -> PaginatedArticleResults {
     let doc = Html::parse_document(html);
-    let box_sel = Selector::parse(".box").unwrap();
 
-    doc.select(&box_sel)
+    let items = doc
+        .select(&*BOX_SEL)
         .filter_map(|el| {
-            let link = el.select(&Selector::parse("h6 a").unwrap()).next()?;
+            let link = el.select(&*H6_A_SEL).next()?;
             let href = link.value().attr("href")?;
 
             let id = href.rsplit('/').next().unwrap().to_string();
             let title = link.text().collect();
 
             let r#abstract = el
-                .select(&Selector::parse("h6 + p").unwrap())
+                .select(&*H6_PLUS_P_SEL)
                 .next()
-                .map(|e| clean_text(&e.text().collect::<String>()))
+                .map(|e| e.text().collect::<String>().trim().to_owned())
                 .unwrap();
 
             let category = el
-                .select(&Selector::parse(".category-name").unwrap())
+                .select(&*CATEGORY_NAME_SEL)
                 .next()
-                .map(|e| clean_text(&e.text().collect::<String>()))
-                .and_then(|m| from_scraped_str::<ArticleCategory>(&m))
+                .map(|e| e.text().collect::<String>().trim().to_owned())
+                .and_then(|m| ArticleCategory::from_str(&m).ok())
                 .unwrap();
 
             let date = el
-                .select(&Selector::parse(".pub-date").unwrap())
+                .select(&*PUB_DATE_SEL)
                 .next()
-                .map(|e| clean_text(&e.text().collect::<String>()))
+                .map(|e| e.text().collect::<String>().trim().to_owned())
                 .unwrap();
 
             let likes: i32 = el
-                .select(&Selector::parse(".likes-cnt").unwrap())
+                .select(&*LIKES_CNT_SEL)
                 .next()
-                .map(|e| clean_text(&e.text().collect::<String>()).parse().unwrap())
+                .map(|e| {
+                    e.text()
+                        .collect::<String>()
+                        .trim()
+                        .to_owned()
+                        .parse()
+                        .unwrap()
+                })
                 .unwrap();
 
             let comments = el
-                .select(&Selector::parse(".comments-cnt").unwrap())
+                .select(&*COMMENTS_CNT_SEL)
                 .next()
-                .map(|e| clean_text(&e.text().collect::<String>()).parse().unwrap())
+                .map(|e| {
+                    e.text()
+                        .collect::<String>()
+                        .trim()
+                        .to_owned()
+                        .parse()
+                        .unwrap()
+                })
                 .unwrap();
 
             let image = extract_img(&el);
@@ -187,5 +239,13 @@ pub fn parse_article_search(html: &str) -> Vec<ArticleSearchResult> {
                 image,
             })
         })
-        .collect()
+        .collect();
+
+    let (page, total_pages) = parse_pagination(&doc);
+
+    PaginatedArticleResults {
+        items,
+        page,
+        total_pages,
+    }
 }

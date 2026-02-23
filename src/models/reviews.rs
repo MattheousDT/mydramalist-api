@@ -1,21 +1,18 @@
 use crate::models::Image;
 use serde::{Deserialize, Serialize};
-use strum::Display;
+use strum::{Display, EnumString};
 use utoipa::ToSchema;
 
 /// The watch status of the reviewer for the specific title.
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString)]
 #[serde(rename_all = "snake_case")]
-#[strum(serialize_all = "lowercase")]
+#[strum(ascii_case_insensitive)]
 pub enum ReviewStatus {
     /// The user has finished watching the title.
-    #[serde(alias = "Completed")]
     Completed,
     /// The user is currently watching the title.
-    #[serde(alias = "Ongoing")]
     Ongoing,
     /// The user has stopped watching the title before finishing.
-    #[serde(alias = "Dropped")]
     Dropped,
 }
 

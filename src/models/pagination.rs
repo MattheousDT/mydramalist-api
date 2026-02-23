@@ -16,8 +16,13 @@ macro_rules! define_pagination {
     };
 }
 
-use crate::models::{Image, Recommendation, Review};
+use crate::models::{
+    ArticleSearchResult, Image, PeopleSearchResult, Recommendation, Review, TitleSearchResult,
+};
 
 define_pagination!(PaginatedPhotos, Image, 3);
 define_pagination!(PaginatedReviews, Review, 27);
 define_pagination!(PaginatedRecommendations, Recommendation, 6);
+define_pagination!(PaginatedTitleResults, TitleSearchResult, 12);
+define_pagination!(PaginatedPeopleResults, PeopleSearchResult, 8);
+define_pagination!(PaginatedArticleResults, ArticleSearchResult, 5);

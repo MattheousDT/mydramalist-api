@@ -1,11 +1,19 @@
 use crate::models::Image;
+use regex::Regex;
 use scraper::{ElementRef, Html, Selector};
+use std::sync::LazyLock;
+
+static SMALL_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse("small").unwrap());
+static A_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse("a").unwrap());
+static IMG_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse("img").unwrap());
+static PAGE_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"[?&]page=(\d+)").expect("Invalid Regex"));
 
 pub fn extract_img(el: &ElementRef) -> Option<Image> {
     let img_node = if el.value().name() == "img" {
         Some(*el)
     } else {
-        el.select(&Selector::parse("img").unwrap()).next()
+        el.select(&*IMG_SEL).next()
     };
 
     img_node.and_then(|img| {
@@ -16,47 +24,59 @@ pub fn extract_img(el: &ElementRef) -> Option<Image> {
     })
 }
 
-pub fn clean_text(s: &str) -> String {
-    s.trim().to_string()
-}
+pub fn extract_character_info(el: &ElementRef) -> (Option<String>, Option<String>) {
+    let mut character = None;
+    let mut character_id = None;
 
-pub fn from_scraped_str<T>(s: &str) -> Option<T>
-where
-    T: serde::de::DeserializeOwned,
-{
-    let cleaned = s.trim();
-    let json_compat = format!("\"{}\"", cleaned);
+    for small in el.select(&*SMALL_SEL) {
+        if !small.value().classes().any(|c| c == "text-muted") {
+            character = Some(small.text().collect::<String>().trim().to_owned());
 
-    if let Ok(val) = serde_json::from_str::<T>(&json_compat) {
-        return Some(val);
+            if let Some(a) = small.select(&*A_SEL).next() {
+                if let Some(href) = a.value().attr("href") {
+                    character_id = Some(href.trim_start_matches("/character/").to_string());
+                }
+            }
+            break;
+        }
     }
 
-    let snake_case = cleaned.to_lowercase().replace([' ', '-'], "_");
-    let json_snake_compat = format!("\"{}\"", snake_case);
-
-    if let Ok(val) = serde_json::from_str::<T>(&json_snake_compat) {
-        return Some(val);
-    }
-
-    tracing::warn!("Failed to map scraped string to Enum: [{}]", cleaned);
-    None
+    (character, character_id)
 }
 
 pub fn parse_pagination(doc: &Html) -> (i32, i32) {
-    let pagination_sel = Selector::parse(".pagination .page-item").unwrap();
+    static PAGINATION_SEL: LazyLock<Selector> =
+        LazyLock::new(|| Selector::parse(".pagination .page-item").unwrap());
+
     let mut current_page = 1;
     let mut max_page = 1;
 
-    for li in doc.select(&pagination_sel) {
+    for li in doc.select(&*PAGINATION_SEL) {
         let is_active = li.value().classes().any(|c| c == "active");
-        let text = li.text().collect::<String>().trim().to_string();
 
+        // 1. Parse the page number from the text (used to find the active/current page)
+        let text = li.text().collect::<String>().trim().to_owned();
         if let Ok(num) = text.parse::<i32>() {
             if is_active {
                 current_page = num;
             }
             if num > max_page {
                 max_page = num;
+            }
+        }
+
+        // 2. Extract the page number from the `href` (captures the .last and .next links)
+        if let Some(a) = li.select(&*A_SEL).next() {
+            if let Some(href) = a.value().attr("href") {
+                if let Some(caps) = PAGE_RE.captures(href) {
+                    if let Some(m) = caps.get(1) {
+                        if let Ok(num) = m.as_str().parse::<i32>() {
+                            if num > max_page {
+                                max_page = num;
+                            }
+                        }
+                    }
+                }
             }
         }
     }

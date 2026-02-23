@@ -1,104 +1,138 @@
 use crate::models::*;
+use url::form_urlencoded::Serializer;
 
 pub struct MdlUrlBuilder;
 
 impl MdlUrlBuilder {
     pub fn title_reviews(id: &str, query: &ReviewSearchQuery) -> String {
-        let mut p = vec![format!("page={}", query.page.unwrap_or(1))];
+        let mut serializer = Serializer::new(String::from(format!(
+            "https://mydramalist.com/{}/reviews?",
+            id
+        )));
+        serializer.append_pair("page", &query.page.unwrap_or(1).to_string());
+
         if let Some(v) = query.sort {
-            p.push(format!("sort={}", v));
+            serializer.append_pair("sort", &v.to_string());
         }
         if let Some(v) = query.status {
-            p.push(format!("status={}", v));
+            serializer.append_pair("status", &v.to_string());
         }
         if let Some(true) = query.hide_spoiler {
-            p.push("spoiler=0".to_string());
+            serializer.append_pair("spoiler", "0");
         }
-        format!("https://mydramalist.com/{}/reviews?{}", id, p.join("&"))
+
+        serializer.finish()
     }
 
     pub fn search_titles(query: &TitleSearchQuery) -> String {
-        let mut p = vec!["adv=titles".to_string()];
+        let mut serializer =
+            Serializer::new(String::from("https://mydramalist.com/search?adv=titles&"));
+
+        serializer.append_pair("page", &query.page.unwrap_or(1).to_string());
+
         if let Some(q) = &query.q {
-            p.push(format!("q={}", urlencoding::encode(q)));
+            serializer.append_pair("q", q);
         }
         if let Some(v) = query.r#type {
-            p.push(format!("ty={}", v as i32));
+            serializer.append_pair("ty", &(v as i32).to_string());
         }
         if let Some(v) = query.country {
-            p.push(format!("co={}", v as i32));
+            serializer.append_pair("co", &(v as i32).to_string());
         }
         if let Some(v) = query.genre {
-            p.push(format!("ge={}", v as i32));
+            serializer.append_pair("ge", &(v as i32).to_string());
         }
         if let Some(v) = query.tag {
-            p.push(format!("th={}", v));
+            serializer.append_pair("th", &v.to_string());
         }
         if let Some(v) = query.network {
-            p.push(format!("nt={}", v));
+            serializer.append_pair("nt", &v.to_string());
         }
         if let Some(v) = query.service {
-            p.push(format!("sr={}", v));
+            serializer.append_pair("sr", &v.to_string());
         }
-        if let Some(v) = query.release_date {
-            p.push(format!("re={},{}", v.0, v.1));
+
+        // Reconstruct the tuples using sensible defaults for the missing half
+        if query.release_year_min.is_some() || query.release_year_max.is_some() {
+            let min = query.release_year_min.unwrap_or(1900);
+            let max = query.release_year_max.unwrap_or(2050);
+            serializer.append_pair("re", &format!("{},{}", min, max));
         }
-        if let Some(v) = query.rating {
-            p.push(format!("rt={},{}", v.0, v.1));
+
+        if query.rating_min.is_some() || query.rating_max.is_some() {
+            let min = query.rating_min.unwrap_or(0);
+            let max = query.rating_max.unwrap_or(10);
+            serializer.append_pair("rt", &format!("{},{}", min, max));
         }
-        if let Some(v) = query.episodes {
-            p.push(format!("ep={},{}", v.0, v.1));
+
+        if query.episodes_min.is_some() || query.episodes_max.is_some() {
+            let min = query.episodes_min.unwrap_or(0);
+            let max = query.episodes_max.unwrap_or(999);
+            serializer.append_pair("ep", &format!("{},{}", min, max));
         }
-        if let Some(v) = query.runtime {
-            p.push(format!("ru={},{}", v.0, v.1));
+
+        if query.runtime_min.is_some() || query.runtime_max.is_some() {
+            let min = query.runtime_min.unwrap_or(0);
+            let max = query.runtime_max.unwrap_or(999);
+            serializer.append_pair("ru", &format!("{},{}", min, max));
         }
+
         if let Some(v) = query.status {
-            p.push(format!("st={}", v as i32));
+            serializer.append_pair("st", &(v as i32).to_string());
         }
         if let Some(v) = query.format {
-            p.push(format!(
-                "fo={}",
-                match v {
-                    Format::Drama(f) => f as i32,
-                    Format::Movie(f) => f as i32,
-                    Format::TV(f) => f as i32,
-                }
-            ));
+            let fo = match v {
+                Format::Drama(f) => f as i32,
+                Format::Movie(f) => f as i32,
+                Format::TV(f) => f as i32,
+            };
+            serializer.append_pair("fo", &fo.to_string());
         }
         if let Some(v) = query.sort {
-            p.push(format!("so={}", v));
+            serializer.append_pair("so", &v.to_string());
         }
-        format!("https://mydramalist.com/search?{}", p.join("&"))
+
+        serializer.finish()
     }
 
     pub fn search_people(query: &PeopleSearchQuery) -> String {
-        let mut p = vec!["adv=people".to_string()];
+        let mut serializer =
+            Serializer::new(String::from("https://mydramalist.com/search?adv=people&"));
+
+        serializer.append_pair("page", &query.page.unwrap_or(1).to_string());
+
         if let Some(q) = &query.q {
-            p.push(format!("q={}", urlencoding::encode(q)));
+            serializer.append_pair("q", q);
         }
         if let Some(v) = query.nationality {
-            p.push(format!("na={}", v as i32));
+            serializer.append_pair("na", &(v as i32).to_string());
         }
         if let Some(v) = query.gender {
-            p.push(format!("gd={}", v as i32));
+            serializer.append_pair("gd", &(v as i32).to_string());
         }
         if let Some(v) = query.sort {
-            p.push(format!("so={}", v));
+            serializer.append_pair("so", &v.to_string());
         }
-        format!("https://mydramalist.com/search?{}", p.join("&"))
+
+        serializer.finish()
     }
 
     pub fn search_articles(query: &ArticleSearchQuery) -> String {
-        let mut p = vec!["adv=articles".to_string()];
+        let mut serializer =
+            Serializer::new(String::from("https://mydramalist.com/search?adv=articles&"));
+
+        serializer.append_pair("page", &query.page.unwrap_or(1).to_string());
+
         if let Some(q) = &query.q {
-            p.push(format!("q={}", urlencoding::encode(q)));
+            serializer.append_pair("q", q);
         }
         if let Some(v) = query.category {
-            p.push(format!("aca={}", v as i32));
+            serializer.append_pair("aca", &(v as i32).to_string());
         }
         if let Some(v) = query.sort {
-            p.push(format!("so={}", v));
+            serializer.append_pair("so", &v.to_string());
         }
-        format!("https://mydramalist.com/search?{}", p.join("&"))
+
+        serializer.finish()
     }
 }

@@ -36,73 +36,58 @@ impl ScraperService {
         }
     }
 
-    #[instrument(skip(self), fields(search_type = "title_details"))]
-    pub async fn get_title_details(&self, id: String) -> Result<Option<TitleDetails>> {
-        let url = format!("https://mydramalist.com/{}", id);
-        info!("Fetching title details: {}", url);
-
-        if let Some(cached_html) = self.html_cache.get(&url).await {
-            return Ok(MdlParser::parse_title_details(&cached_html, &id));
+    async fn fetch_and_parse<T, F>(&self, url: &str, parser: F) -> Result<Option<T>>
+    where
+        F: FnOnce(&str) -> T,
+        T: Clone + Send + Sync + 'static,
+    {
+        if let Some(cached_html) = self.html_cache.get(url).await {
+            return Ok(Some(parser(&cached_html)));
         }
 
-        let response = self.client.get(&url).send().await?;
+        let response = self.client.get(url).send().await?;
         if !response.status().is_success() {
             return Ok(None);
         }
 
         let html = response.text().await?;
-        let results = MdlParser::parse_title_details(&html, &id);
-        self.html_cache.insert(url, html.to_string()).await;
+        let result = parser(&html);
+        self.html_cache.insert(url.to_string(), html).await;
 
-        Ok(results)
+        Ok(Some(result))
+    }
+
+    #[instrument(skip(self), fields(search_type = "title_details"))]
+    pub async fn get_title_details(&self, id: String) -> Result<Option<TitleDetails>> {
+        let url = format!("https://mydramalist.com/{}", id);
+        info!("Fetching title details: {}", url);
+        self.fetch_and_parse(&url, |html| MdlParser::parse_title_details(html, &id))
+            .await
+            .map(|opt| opt.flatten())
     }
 
     #[instrument(skip(self), fields(search_type = "title_episodes"))]
-    pub async fn get_title_episodes(&self, id: String) -> Result<Vec<Episode>> {
+    pub async fn get_title_episodes(&self, id: String) -> Result<Option<Vec<Episode>>> {
         let url = format!("https://mydramalist.com/{}/episodes", id);
         info!("Fetching title episodes: {}", url);
-
-        if let Some(cached_html) = self.html_cache.get(&url).await {
-            return Ok(MdlParser::parse_title_episodes(&cached_html));
-        }
-
-        let response = self.client.get(&url).send().await?;
-        let html = response.text().await?;
-        let results = MdlParser::parse_title_episodes(&html);
-        self.html_cache.insert(url, html.to_string()).await;
-        Ok(results)
+        self.fetch_and_parse(&url, |html| MdlParser::parse_title_episodes(html))
+            .await
     }
 
     #[instrument(skip(self), fields(search_type = "title_cast"))]
-    pub async fn get_title_cast(&self, id: String) -> Result<TitleCast> {
+    pub async fn get_title_cast(&self, id: String) -> Result<Option<TitleCast>> {
         let url = format!("https://mydramalist.com/{}/cast", id);
         info!("Fetching title cast: {}", url);
-
-        if let Some(cached_html) = self.html_cache.get(&url).await {
-            return Ok(MdlParser::parse_title_cast(&cached_html));
-        }
-
-        let response = self.client.get(&url).send().await?;
-        let html = response.text().await?;
-        let results = MdlParser::parse_title_cast(&html);
-        self.html_cache.insert(url, html.to_string()).await;
-        Ok(results)
+        self.fetch_and_parse(&url, |html| MdlParser::parse_title_cast(html))
+            .await
     }
 
     #[instrument(skip(self), fields(search_type = "title_photos"))]
-    pub async fn get_title_photos(&self, id: String, page: i32) -> Result<PaginatedPhotos> {
+    pub async fn get_title_photos(&self, id: String, page: i32) -> Result<Option<PaginatedPhotos>> {
         let url = format!("https://mydramalist.com/{}/photos?page={}", id, page);
         info!("Fetching title photos: {}", url);
-
-        if let Some(cached_html) = self.html_cache.get(&url).await {
-            return Ok(MdlParser::parse_title_photos(&cached_html));
-        }
-
-        let response = self.client.get(&url).send().await?;
-        let html = response.text().await?;
-        let results = MdlParser::parse_title_photos(&html);
-        self.html_cache.insert(url, html.to_string()).await;
-        Ok(results)
+        self.fetch_and_parse(&url, |html| MdlParser::parse_title_photos(html))
+            .await
     }
 
     #[instrument(skip(self), fields(search_type = "title_reviews"))]
@@ -110,19 +95,11 @@ impl ScraperService {
         &self,
         id: String,
         query: ReviewSearchQuery,
-    ) -> Result<PaginatedReviews> {
+    ) -> Result<Option<PaginatedReviews>> {
         let url = MdlUrlBuilder::title_reviews(&id, &query);
         info!("Fetching title reviews: {}", url);
-
-        if let Some(cached_html) = self.html_cache.get(&url).await {
-            return Ok(MdlParser::parse_title_reviews(&cached_html));
-        }
-
-        let response = self.client.get(&url).send().await?;
-        let html = response.text().await?;
-        let results = MdlParser::parse_title_reviews(&html);
-        self.html_cache.insert(url, html.to_string()).await;
-        Ok(results)
+        self.fetch_and_parse(&url, |html| MdlParser::parse_title_reviews(html))
+            .await
     }
 
     #[instrument(skip(self), fields(search_type = "title_recommendations"))]
@@ -130,36 +107,29 @@ impl ScraperService {
         &self,
         id: String,
         page: i32,
-    ) -> Result<PaginatedRecommendations> {
+    ) -> Result<Option<PaginatedRecommendations>> {
         let url = format!("https://mydramalist.com/{}/recs?page={}", id, page);
         info!("Fetching title recommendations: {}", url);
-
-        if let Some(cached_html) = self.html_cache.get(&url).await {
-            return Ok(MdlParser::parse_title_recommendations(&cached_html));
-        }
-
-        let response = self.client.get(&url).send().await?;
-        let html = response.text().await?;
-        let results = MdlParser::parse_title_recommendations(&html);
-        self.html_cache.insert(url, html.to_string()).await;
-        Ok(results)
+        self.fetch_and_parse(&url, |html| MdlParser::parse_title_recommendations(html))
+            .await
     }
 
     #[instrument(skip(self), fields(search_type = "title_statistics"))]
-    pub async fn get_title_statistics(&self, id: String) -> Result<TitleStatistics> {
+    pub async fn get_title_statistics(&self, id: String) -> Result<Option<TitleStatistics>> {
         let url = format!("https://mydramalist.com/{}/statistics", id);
         info!("Fetching title statistics: {}", url);
 
-        let html = if let Some(cached_html) = self.html_cache.get(&url).await {
-            cached_html
+        let mut stats = if let Some(cached_html) = self.html_cache.get(&url).await {
+            MdlParser::parse_title_statistics(&cached_html, &id)
         } else {
             let response = self.client.get(&url).send().await?;
+            if !response.status().is_success() {
+                return Ok(None);
+            }
             let text = response.text().await?;
-            self.html_cache.insert(url, text.clone()).await;
-            text
+            self.html_cache.insert(url.clone(), text.clone()).await;
+            MdlParser::parse_title_statistics(&text, &id)
         };
-
-        let mut stats = MdlParser::parse_title_statistics(&html, &id);
 
         if let Some(num_id) = id.split('-').next() {
             let age_url = format!("https://mydramalist.com/v1/titles/{}/agegroup", num_id);
@@ -182,57 +152,57 @@ impl ScraperService {
             }
         }
 
-        Ok(stats)
+        Ok(Some(stats))
     }
 
     #[instrument(skip(self), fields(search_type = "titles"))]
-    pub async fn search_titles(&self, query: TitleSearchQuery) -> Result<Vec<TitleSearchResult>> {
+    pub async fn search_titles(&self, query: TitleSearchQuery) -> Result<PaginatedTitleResults> {
         let url = MdlUrlBuilder::search_titles(&query);
         info!("Searching titles: {}", url);
 
-        if let Some(cached_html) = self.html_cache.get(&url).await {
-            return Ok(MdlParser::parse_title_search(&cached_html));
-        }
+        let res = self
+            .fetch_and_parse(&url, |html| MdlParser::parse_title_search(html))
+            .await?;
 
-        let response = self.client.get(&url).send().await?;
-        let html = response.text().await?;
-        let results = MdlParser::parse_title_search(&html);
-        self.html_cache.insert(url, html.to_string()).await;
-        Ok(results)
+        Ok(res.unwrap_or_else(|| PaginatedTitleResults {
+            items: vec![],
+            page: query.page.unwrap_or(1),
+            total_pages: 1,
+        }))
     }
 
     #[instrument(skip(self), fields(search_type = "people"))]
-    pub async fn search_people(&self, query: PeopleSearchQuery) -> Result<Vec<PeopleSearchResult>> {
+    pub async fn search_people(&self, query: PeopleSearchQuery) -> Result<PaginatedPeopleResults> {
         let url = MdlUrlBuilder::search_people(&query);
         info!("Searching people: {}", url);
 
-        if let Some(cached_html) = self.html_cache.get(&url).await {
-            return Ok(MdlParser::parse_people_search(&cached_html));
-        }
+        let res = self
+            .fetch_and_parse(&url, |html| MdlParser::parse_people_search(html))
+            .await?;
 
-        let response = self.client.get(&url).send().await?;
-        let html = response.text().await?;
-        let results = MdlParser::parse_people_search(&html);
-        self.html_cache.insert(url, html.to_string()).await;
-        Ok(results)
+        Ok(res.unwrap_or_else(|| PaginatedPeopleResults {
+            items: vec![],
+            page: query.page.unwrap_or(1),
+            total_pages: 1,
+        }))
     }
 
     #[instrument(skip(self), fields(search_type = "articles"))]
     pub async fn search_articles(
         &self,
         query: ArticleSearchQuery,
-    ) -> Result<Vec<ArticleSearchResult>> {
+    ) -> Result<PaginatedArticleResults> {
         let url = MdlUrlBuilder::search_articles(&query);
         info!("Searching articles: {}", url);
 
-        if let Some(cached_html) = self.html_cache.get(&url).await {
-            return Ok(MdlParser::parse_article_search(&cached_html));
-        }
+        let res = self
+            .fetch_and_parse(&url, |html| MdlParser::parse_article_search(html))
+            .await?;
 
-        let response = self.client.get(&url).send().await?;
-        let html = response.text().await?;
-        let results = MdlParser::parse_article_search(&html);
-        self.html_cache.insert(url, html.to_string()).await;
-        Ok(results)
+        Ok(res.unwrap_or_else(|| PaginatedArticleResults {
+            items: vec![],
+            page: query.page.unwrap_or(1),
+            total_pages: 1,
+        }))
     }
 }

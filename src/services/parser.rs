@@ -11,15 +11,15 @@ pub mod utils;
 pub struct MdlParser;
 
 impl MdlParser {
-    pub fn parse_title_search(html: &str) -> Vec<crate::models::TitleSearchResult> {
+    pub fn parse_title_search(html: &str) -> crate::models::PaginatedTitleResults {
         search::parse_title_search(html)
     }
 
-    pub fn parse_people_search(html: &str) -> Vec<crate::models::PeopleSearchResult> {
+    pub fn parse_people_search(html: &str) -> crate::models::PaginatedPeopleResults {
         search::parse_people_search(html)
     }
 
-    pub fn parse_article_search(html: &str) -> Vec<crate::models::ArticleSearchResult> {
+    pub fn parse_article_search(html: &str) -> crate::models::PaginatedArticleResults {
         search::parse_article_search(html)
     }
 

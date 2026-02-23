@@ -6,6 +6,10 @@ use utoipa::{IntoParams, ToSchema};
 #[into_params(parameter_in = Query)]
 /// Advanced search parameters for finding Dramas, Movies, and TV Shows.
 pub struct TitleSearchQuery {
+    /// The page number to retrieve.
+    #[param(example = 1)]
+    pub page: Option<i32>,
+
     /// Keyword search.
     #[param(example = "The Glory")]
     pub q: Option<String>,
@@ -34,21 +38,37 @@ pub struct TitleSearchQuery {
     /// Internal MDL Service ID.
     pub service: Option<i32>,
 
-    /// Release year range.
-    #[param(example = "2022,2023")]
-    pub release_date: Option<(i32, i32)>,
+    /// Minimum release year.
+    #[param(example = 2022)]
+    pub release_year_min: Option<i32>,
 
-    /// Rating score range.
-    #[param(example = "8,10")]
-    pub rating: Option<(i32, i32)>,
+    /// Maximum release year.
+    #[param(example = 2023)]
+    pub release_year_max: Option<i32>,
 
-    /// Total episode count range.
-    #[param(example = "8,16")]
-    pub episodes: Option<(i32, i32)>,
+    /// Minimum rating score (0-10).
+    #[param(example = 8)]
+    pub rating_min: Option<i32>,
 
-    /// Episode runtime range in minutes.
-    #[param(example = "45,60")]
-    pub runtime: Option<(i32, i32)>,
+    /// Maximum rating score (0-10).
+    #[param(example = 10)]
+    pub rating_max: Option<i32>,
+
+    /// Minimum total episodes.
+    #[param(example = 8)]
+    pub episodes_min: Option<i32>,
+
+    /// Maximum total episodes.
+    #[param(example = 16)]
+    pub episodes_max: Option<i32>,
+
+    /// Minimum episode runtime in minutes.
+    #[param(example = 45)]
+    pub runtime_min: Option<i32>,
+
+    /// Maximum episode runtime in minutes.
+    #[param(example = 60)]
+    pub runtime_max: Option<i32>,
 
     /// Production status.
     #[param(example = "completed")]
@@ -84,6 +104,10 @@ pub struct ReviewSearchQuery {
 #[into_params(parameter_in = Query)]
 /// Search parameters for finding Actors, Actresses, and Production Staff.
 pub struct PeopleSearchQuery {
+    /// The page number to retrieve.
+    #[param(example = 1)]
+    pub page: Option<i32>,
+
     /// Name of the person.
     #[param(example = "Park Eun-Bin")]
     pub q: Option<String>,
@@ -105,6 +129,10 @@ pub struct PeopleSearchQuery {
 #[into_params(parameter_in = Query)]
 /// Search parameters for MDL Articles, Editorials, and News.
 pub struct ArticleSearchQuery {
+    /// The page number to retrieve.
+    #[param(example = 1)]
+    pub page: Option<i32>,
+
     /// Keywords for the article content.
     #[param(example = "The Glory")]
     pub q: Option<String>,

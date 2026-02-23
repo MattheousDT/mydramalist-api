@@ -95,6 +95,28 @@ pub async fn title_photos_handler(
 
 #[utoipa::path(
     get,
+    path = "/titles/{id}/reviews",
+    tag = "Titles",
+    summary = "Get Title Reviews",
+    description = "Retrieves user reviews for a specific title using its MyDramaList ID. Supports advanced filtering and sorting.",
+    params(
+        ("id" = String, Path, description = "MyDramaList Title ID", example = "49231-move-to-heaven"),
+        ReviewSearchQuery
+    ),
+    responses(
+        (status = 200, description = "Reviews successfully retrieved", body = TitleReviews)
+    )
+)]
+pub async fn title_reviews_handler(
+    State(s): State<Arc<ScraperService>>,
+    Path(id): Path<String>,
+    Query(q): Query<ReviewSearchQuery>,
+) -> Result<Json<TitleReviews>, AppError> {
+    Ok(Json(s.get_title_reviews(id, q).await?))
+}
+
+#[utoipa::path(
+    get,
     path = "/titles/search",
     tag = "Titles",
     summary = "Search Titles",

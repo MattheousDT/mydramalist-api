@@ -24,6 +24,7 @@ async fn main() {
         )
         .route("/titles/{id}/cast", get(handlers::title_cast_handler))
         .route("/titles/{id}/photos", get(handlers::title_photos_handler))
+        .route("/titles/{id}/reviews", get(handlers::title_reviews_handler))
         .route("/people/search", get(handlers::people_search_handler))
         .route("/articles/search", get(handlers::article_search_handler))
         .with_state(scraper_service);

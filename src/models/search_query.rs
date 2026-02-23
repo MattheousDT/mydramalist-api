@@ -22,16 +22,16 @@ pub struct TitleSearchQuery {
     #[param(example = "standard_series")]
     pub format: Option<Format>,
 
-    /// Main genre to filter by
+    /// Main genre to filter by.
     pub genre: Option<Genre>,
 
-    /// Internal MDL Tag ID
+    /// Internal MDL Tag ID.
     pub tag: Option<i32>,
 
-    /// Internal MDL Network ID
+    /// Internal MDL Network ID.
     pub network: Option<i32>,
 
-    /// Internal MDL Service ID
+    /// Internal MDL Service ID.
     pub service: Option<i32>,
 
     /// Release year range.
@@ -57,6 +57,27 @@ pub struct TitleSearchQuery {
     /// Ordering of results.
     #[param(example = "top_rated")]
     pub sort: Option<TitleSort>,
+}
+
+#[derive(Debug, Deserialize, IntoParams, ToSchema)]
+#[into_params(parameter_in = Query)]
+/// Parameters for filtering and sorting user reviews for a title.
+pub struct ReviewSearchQuery {
+    /// The page number to retrieve.
+    #[param(example = 1)]
+    pub page: Option<i32>,
+
+    /// Filter reviews by the author's watch status.
+    #[param(example = "completed")]
+    pub status: Option<ReviewStatus>,
+
+    /// Sort order for the reviews.
+    #[param(example = "helpful")]
+    pub sort: Option<ReviewSort>,
+
+    /// Whether to filter out reviews containing spoilers.
+    #[param(example = true)]
+    pub hide_spoiler: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, IntoParams, ToSchema)]
@@ -88,11 +109,11 @@ pub struct ArticleSearchQuery {
     #[param(example = "The Glory")]
     pub q: Option<String>,
 
-    /// Filter by article category
+    /// Filter by article category.
     #[param(example = "news")]
     pub category: Option<ArticleCategory>,
 
-    /// Ordering of results
+    /// Ordering of results.
     #[param(example = "publish_date")]
     pub sort: Option<ArticleSort>,
 }

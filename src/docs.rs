@@ -12,6 +12,7 @@ use utoipa::OpenApi;
         title_episodes_handler,
         title_cast_handler,
         title_photos_handler,
+        title_reviews_handler,
     ),
     components(schemas(
         ArticleCategory,
@@ -45,6 +46,13 @@ use utoipa::OpenApi;
         Episode,
         TitleCast,
         TitlePhotos,
+        TitleReviews,
+        Review,
+        ReviewAuthor,
+        ReviewScores,
+        ReviewStatus,
+        ReviewSort,
+        ReviewSearchQuery,
         PaginationQuery,
     )),
     tags(

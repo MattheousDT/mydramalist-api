@@ -3,6 +3,20 @@ use crate::models::*;
 pub struct MdlUrlBuilder;
 
 impl MdlUrlBuilder {
+    pub fn title_reviews(id: &str, query: &ReviewSearchQuery) -> String {
+        let mut p = vec![format!("page={}", query.page.unwrap_or(1))];
+        if let Some(v) = query.sort {
+            p.push(format!("sort={}", v));
+        }
+        if let Some(v) = query.status {
+            p.push(format!("status={}", v));
+        }
+        if let Some(true) = query.hide_spoiler {
+            p.push("spoiler=0".to_string());
+        }
+        format!("https://mydramalist.com/{}/reviews?{}", id, p.join("&"))
+    }
+
     pub fn search_titles(query: &TitleSearchQuery) -> String {
         let mut p = vec!["adv=titles".to_string()];
         if let Some(q) = &query.q {

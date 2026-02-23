@@ -124,6 +124,32 @@ impl ScraperService {
         Ok(results)
     }
 
+    #[instrument(skip(self), fields(search_type = "title_reviews"))]
+    pub async fn get_title_reviews(
+        &self,
+        id: String,
+        query: ReviewSearchQuery,
+    ) -> Result<TitleReviews> {
+        let url = MdlUrlBuilder::title_reviews(&id, &query);
+
+        let label = "Reviews";
+        info!(target: "scraper", "[{}] Initiating search: {}", label, url);
+
+        if let Some(cached_html) = self.html_cache.get(&url).await {
+            debug!(target: "scraper", "[{}] Cache Hit", label);
+            return Ok(MdlParser::parse_title_reviews(&cached_html));
+        }
+
+        debug!(target: "scraper", "[{}] Cache Miss. Fetching from MDL...", label);
+        let response = self.client.get(&url).send().await?;
+        let html = response.text().await?;
+
+        let results = MdlParser::parse_title_reviews(&html);
+        self.html_cache.insert(url, html.to_string()).await;
+
+        Ok(results)
+    }
+
     #[instrument(skip(self), fields(search_type = "titles"))]
     pub async fn search_titles(&self, query: TitleSearchQuery) -> Result<Vec<TitleSearchResult>> {
         let url = MdlUrlBuilder::search_titles(&query);

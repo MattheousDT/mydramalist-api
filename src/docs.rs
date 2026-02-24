@@ -6,6 +6,7 @@ use utoipa::OpenApi;
 #[openapi(
     paths(
         article_search_handler,
+        person_details_handler,
         people_search_handler,
         title_cast_handler,
         title_details_handler,
@@ -43,6 +44,8 @@ use utoipa::OpenApi;
         PeopleSearchQuery,
         PeopleSearchResult,
         PeopleSort,
+        PersonDetails,
+        PersonWork,
         RecommendationPreview,
         RecommendationPreview,
         Review,

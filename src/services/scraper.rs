@@ -52,7 +52,9 @@ impl ScraperService {
 
         let html = response.text().await?;
         let result = parser(&html);
-        self.html_cache.insert(url.to_string(), html).await;
+        self.html_cache
+            .insert(url.to_string(), html.to_string())
+            .await;
 
         Ok(Some(result))
     }
@@ -62,6 +64,15 @@ impl ScraperService {
         let url = format!("https://mydramalist.com/{}", id);
         info!("Fetching title details: {}", url);
         self.fetch_and_parse(&url, |html| MdlParser::parse_title_details(html, &id))
+            .await
+            .map(|opt| opt.flatten())
+    }
+
+    #[instrument(skip(self), fields(search_type = "person_details"))]
+    pub async fn get_person_details(&self, id: String) -> Result<Option<PersonDetails>> {
+        let url = format!("https://mydramalist.com/people/{}", id);
+        info!("Fetching person details: {}", url);
+        self.fetch_and_parse(&url, |html| MdlParser::parse_person_details(html, &id))
             .await
             .map(|opt| opt.flatten())
     }

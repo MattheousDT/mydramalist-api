@@ -177,6 +177,30 @@ pub async fn title_recommendations_handler(
 
 #[utoipa::path(
     get,
+    path = "/people/{id}",
+    tag = "People",
+    summary = "Get Person Details",
+    description = "Retrieves comprehensive details about a specific actor, actress, or crew member using their MyDramaList ID.",
+    params(
+        ("id" = String, Path, description = "MyDramaList Person ID", example = "1897-park-eun-bin")
+    ),
+    responses(
+        (status = 200, description = "Person details successfully retrieved", body = PersonDetails),
+        (status = 404, description = "Person not found")
+    )
+)]
+pub async fn person_details_handler(
+    State(s): State<Arc<ScraperService>>,
+    Path(id): Path<String>,
+) -> Result<Json<PersonDetails>, AppError> {
+    match s.get_person_details(id.clone()).await? {
+        Some(d) => Ok(Json(d)),
+        None => Err(AppError::NotFound(format!("Person '{}' not found", id))),
+    }
+}
+
+#[utoipa::path(
+    get,
     path = "/titles/search",
     tag = "Titles",
     summary = "Search Titles",

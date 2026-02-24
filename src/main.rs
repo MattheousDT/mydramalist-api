@@ -28,6 +28,7 @@ async fn main() {
             get(handlers::title_recommendations_handler),
         )
         .route("/people/search", get(handlers::people_search_handler))
+        .route("/people/{id}", get(handlers::person_details_handler))
         .route("/articles/search", get(handlers::article_search_handler))
         .with_state(scraper_service);
 

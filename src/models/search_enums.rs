@@ -9,6 +9,7 @@ use utoipa::ToSchema;
 #[strum(ascii_case_insensitive)]
 #[repr(i32)]
 pub enum Type {
+    #[strum(serialize = "drama", serialize = "special")]
     Drama = 68,
     Movie = 77,
     #[serde(rename = "tv_show")]

@@ -7,7 +7,7 @@ use std::sync::LazyLock;
 use super::utils::{extract_img, parse_pagination};
 
 static MDL_INFO_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"([A-z\s]+) (Movie|TV Show|Drama) - (\d{4}|TBA)(?:, (\d+) episodes)?")
+    Regex::new(r"([A-z\s]+) (Movie|TV Show|Drama|Special) - (\d{4}|TBA)(?:, (\d+) episodes)?")
         .expect("Invalid Regex")
 });
 
@@ -74,10 +74,13 @@ pub fn parse_title_search(html: &str) -> PaginatedTitleResults {
                 .and_then(|m| Country::from_str(m.as_str()).ok())
                 .unwrap();
 
-            let r#type = caps
-                .get(2)
-                .and_then(|m| Type::from_str(m.as_str()).ok())
-                .unwrap();
+            let type_str = caps.get(2).unwrap().as_str();
+            let r#type = Type::from_str(type_str).unwrap();
+            let format = if type_str == "Special" {
+                Some(Format::Drama(DramaFormat::DramaSpecial))
+            } else {
+                None
+            };
 
             let year = caps
                 .get(3)
@@ -90,6 +93,7 @@ pub fn parse_title_search(html: &str) -> PaginatedTitleResults {
             Some(TitleSearchResult {
                 id,
                 r#type,
+                format,
                 title,
                 year,
                 rating,

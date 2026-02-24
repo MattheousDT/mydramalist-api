@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 
-use crate::models::{ArticleCategory, Country, Type};
+use crate::models::{ArticleCategory, Country, Format, Type};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -46,6 +46,10 @@ pub struct TitleSearchResult {
     /// The type of title.
     #[schema(example = "drama")]
     pub r#type: Type,
+
+    /// Format of the title.
+    #[schema(example = "drama_special")]
+    pub format: Option<Format>,
 
     /// The country of origin.
     #[schema(example = "south_korea")]

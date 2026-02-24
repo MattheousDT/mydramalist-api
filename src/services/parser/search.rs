@@ -77,7 +77,7 @@ pub fn parse_title_search(html: &str) -> PaginatedTitleResults {
             let type_str = caps.get(2).unwrap().as_str();
             let r#type = Type::from_str(type_str).unwrap();
             let format = if type_str == "Special" {
-                Some(Format::Drama(DramaFormat::DramaSpecial))
+                Some(Format::DramaSpecial)
             } else {
                 None
             };

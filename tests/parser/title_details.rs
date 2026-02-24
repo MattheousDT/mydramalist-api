@@ -1,4 +1,4 @@
-use mydramalist_api::models::{Country, Genre, Type};
+use mydramalist_api::models::{Country, Format, Genre, Type};
 use mydramalist_api::services::parser::MdlParser;
 
 use crate::read_fixture;
@@ -23,6 +23,7 @@ fn test_parse_title_details() {
     );
     assert_eq!(details.country, Some(Country::SouthKorea));
     assert_eq!(details.r#type, Some(Type::Drama));
+    assert_eq!(details.format, Some(Format::StandardSeries));
 
     assert_eq!(details.aka.len(), 17);
     assert!(details.aka.contains(&"The Glory Part 1".to_string()));
@@ -52,7 +53,6 @@ fn test_parse_title_details() {
     assert_eq!(stats.reviews_count, Some(225));
     assert_eq!(stats.rank, Some(106));
     assert_eq!(stats.popularity, Some(35));
-    assert_eq!(stats.favorites, Some(0));
 
     assert_eq!(details.original_network, vec!["Netflix".to_string()]);
 

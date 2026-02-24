@@ -1,4 +1,4 @@
-use crate::models::{DramaFormat, Format, Gender, Nationality, PersonDetails, PersonWork, Type};
+use crate::models::{Format, Gender, Nationality, PersonDetails, PersonWork, Type};
 use crate::services::parser::utils::extract_img;
 use regex::Regex;
 use scraper::{ElementRef, Html, Selector};
@@ -158,7 +158,7 @@ pub fn parse_person_details(html: &str, person_id: &str) -> Option<PersonDetails
 
                     r#type = Type::from_str(&type_text).ok();
                     format = if type_text == "Special" {
-                        Some(Format::Drama(DramaFormat::DramaSpecial))
+                        Some(Format::DramaSpecial)
                     } else {
                         None
                     };

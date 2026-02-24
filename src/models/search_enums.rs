@@ -56,20 +56,19 @@ pub enum Status {
     Completed = 3,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, PartialEq, Eq)]
+#[derive(
+    Debug, Serialize, Deserialize, ToSchema, Copy, Clone, Display, EnumString, PartialEq, Eq,
+)]
 #[serde(rename_all = "snake_case")]
+#[strum(ascii_case_insensitive)]
 #[repr(i32)]
-pub enum DramaFormat {
+pub enum Format {
+    // Drama Formats
     StandardSeries = 7,
     WebSeries = 8,
     VerticalSeries = 10,
     DramaSpecial = 14,
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-#[repr(i32)]
-pub enum MovieFormat {
+    // Movie Formats
     FeatureFilm = 24,
     ShortFilm = 26,
     IndependentFilm = 28,
@@ -77,12 +76,7 @@ pub enum MovieFormat {
     Documentary = 32,
     AnimatedFilm = 34,
     Other = 36,
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-#[repr(i32)]
-pub enum TVShowFormat {
+    // TV Show Formats
     TalkShow = 5,
     VarietyShow = 6,
     DocumentaryProgram = 16,
@@ -90,14 +84,6 @@ pub enum TVShowFormat {
     RealityProgram = 20,
     OtherProgram = 22,
     AnimatedProgram = 38,
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema, Copy, Clone, PartialEq, Eq)]
-#[serde(rename_all = "snake_case", untagged)]
-pub enum Format {
-    Drama(DramaFormat),
-    Movie(MovieFormat),
-    TV(TVShowFormat),
 }
 
 #[derive(

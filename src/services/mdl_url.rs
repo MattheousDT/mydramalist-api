@@ -36,6 +36,9 @@ impl MdlUrlBuilder {
         if let Some(v) = query.r#type {
             serializer.append_pair("ty", &(v as i32).to_string());
         }
+        if let Some(v) = query.format {
+            serializer.append_pair("fo", &(v as i32).to_string());
+        }
         if let Some(v) = query.country {
             serializer.append_pair("co", &(v as i32).to_string());
         }
@@ -80,14 +83,7 @@ impl MdlUrlBuilder {
         if let Some(v) = query.status {
             serializer.append_pair("st", &(v as i32).to_string());
         }
-        if let Some(v) = query.format {
-            let fo = match v {
-                Format::Drama(f) => f as i32,
-                Format::Movie(f) => f as i32,
-                Format::TV(f) => f as i32,
-            };
-            serializer.append_pair("fo", &fo.to_string());
-        }
+
         if let Some(v) = query.sort {
             serializer.append_pair("so", &v.to_string());
         }

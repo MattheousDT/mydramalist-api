@@ -1,4 +1,4 @@
-use mydramalist_api::models::{DramaFormat, Format, Gender, Nationality, Type};
+use mydramalist_api::models::{Format, Gender, Nationality, Type};
 use mydramalist_api::services::parser::MdlParser;
 
 use crate::read_fixture;
@@ -56,10 +56,7 @@ fn test_parse_person_details() {
         .expect("Kitchen Maid should be parsed");
     assert_eq!(special.title, "Kitchen Maid");
     assert_eq!(special.r#type, Type::Drama);
-    assert_eq!(
-        special.format,
-        Some(Format::Drama(DramaFormat::DramaSpecial))
-    );
+    assert_eq!(special.format, Some(Format::DramaSpecial));
     assert_eq!(special.year, Some(2002));
     assert_eq!(special.episodes, Some(2));
     assert_eq!(special.role_type.as_deref(), Some("Support Role"));

@@ -21,8 +21,13 @@ static FILM_COVER_SEL: LazyLock<Selector> =
     LazyLock::new(|| Selector::parse(".film-cover").unwrap());
 static SHOW_SYNOPSIS_SPAN_SEL: LazyLock<Selector> =
     LazyLock::new(|| Selector::parse(".show-synopsis span").unwrap());
-static SHOW_DETAILS_LI_SEL: LazyLock<Selector> =
-    LazyLock::new(|| Selector::parse(".show-detailsxss ul.list li.list-item").unwrap());
+static SHOW_DETAILS_LI_SEL: LazyLock<Selector> = LazyLock::new(|| {
+    Selector::parse(
+        // Include details from body and desktop sidebar because MDL doesn't include the Format in the mobile body for some reason...
+        ".show-detailsxss .list .list-item, .content-side :first-child .list li.list-item",
+    )
+    .unwrap()
+});
 static B_INLINE_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse("b.inline").unwrap());
 static A_SEL: LazyLock<Selector> = LazyLock::new(|| Selector::parse("a").unwrap());
 static MDL_AKA_TITLES_SEL: LazyLock<Selector> =
@@ -90,6 +95,7 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
     let mut aka = Vec::new();
     let mut country = None;
     let mut r#type = None;
+    let mut format = None;
     let mut episodes = None;
     let mut aired = None;
     let mut aired_on = None;
@@ -100,7 +106,6 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
     let mut watchers = None;
     let mut rank = None;
     let mut popularity = None;
-    let mut favorites = None;
     let mut original_network = Vec::new();
     let mut directors = Vec::new();
     let mut screenwriters = Vec::new();
@@ -137,6 +142,7 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
                 }
                 "Country:" => country = Country::from_str(&value_text).ok(),
                 "Type:" => r#type = Type::from_str(&value_text).ok(),
+                "Format:" => format = Format::from_str(&value_text.replace(" ", "")).ok(),
                 "Episodes:" => episodes = value_text.parse().ok(),
                 "Aired:" => aired = Some(value_text),
                 "Aired On:" => aired_on = Some(value_text),
@@ -157,7 +163,6 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
                 "Ranked:" => rank = NUMBER_RE.replace_all(&value_text, "").parse().ok(),
                 "Popularity:" => popularity = NUMBER_RE.replace_all(&value_text, "").parse().ok(),
                 "Watchers:" => watchers = NUMBER_RE.replace_all(&value_text, "").parse().ok(),
-                "Favorites:" => favorites = NUMBER_RE.replace_all(&value_text, "").parse().ok(),
                 "Original Network:" => {
                     original_network = li
                         .select(&*A_SEL)
@@ -248,7 +253,6 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
         reviews_count,
         rank,
         popularity,
-        favorites,
     };
 
     let where_to_watch = doc
@@ -355,6 +359,7 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
         statistics,
         country,
         r#type,
+        format,
         episodes,
         aired,
         aired_on,

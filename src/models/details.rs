@@ -1,4 +1,4 @@
-use crate::models::{Country, Genre, Image, Type};
+use crate::models::{Country, Format, Genre, Image, Type};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -40,9 +40,13 @@ pub struct TitleDetails {
     #[schema(example = "south_korea")]
     pub country: Option<Country>,
 
-    /// Content type (e.g., Drama, Movie, TV Show).
+    /// Content type.
     #[schema(example = "drama")]
     pub r#type: Option<Type>,
+
+    /// Specific sub-format (if applicable).
+    #[schema(example = "standard_series")]
+    pub format: Option<Format>,
 
     /// Total number of episodes.
     #[schema(example = 16)]
@@ -126,10 +130,6 @@ pub struct Statistics {
     /// Global popularity rank based on watchers.
     #[schema(example = 64)]
     pub popularity: Option<i32>,
-
-    /// Number of users who favorited the title.
-    #[schema(example = 0)]
-    pub favorites: Option<i32>,
 }
 
 /// A person credited in the crew (e.g., Director, Screenwriter).

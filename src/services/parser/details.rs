@@ -1,5 +1,8 @@
-use super::utils::{extract_character_info, extract_img};
-use crate::models::*;
+use crate::models::{
+    CastMember, Country, CrewMember, Format, Genre, Image, RecommendationPreview, Statistics, Tag,
+    TitleDetails, Type, WhereToWatch,
+};
+use crate::services::parser::utils::{extract_character_info, extract_img};
 use regex::Regex;
 use scraper::{Html, Selector};
 use std::str::FromStr;
@@ -12,7 +15,8 @@ static VIEW_ALL_RE: LazyLock<Regex> =
 static NUMBER_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[^\d.]").expect("Invalid Regex"));
 static WHITESPACE_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\s+").expect("Invalid Regex"));
-
+static SOURCE_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\s*\(\s*Source:\s*(.+?)\)\s*$").expect("Invalid Regex"));
 static FILM_TITLE_SEL: LazyLock<Selector> =
     LazyLock::new(|| Selector::parse(".film-title").unwrap());
 static FILM_SUBTITLE_SPAN_SEL: LazyLock<Selector> =
@@ -86,10 +90,24 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
         .next()
         .and_then(|el| extract_img(&el));
 
-    let synopsis = doc
+    let mut synopsis = doc
         .select(&*SHOW_SYNOPSIS_SPAN_SEL)
         .next()
         .map(|e| e.text().collect::<String>().trim().to_owned());
+
+    let mut synopsis_source = None;
+
+    if let Some(ref mut text) = synopsis {
+        if let Some(captures) = SOURCE_RE.captures(text) {
+            if let Some(source_match) = captures.get(1) {
+                synopsis_source = Some(source_match.as_str().to_string());
+                // Remove the source text from the synopsis
+                let range = captures.get(0).unwrap().range();
+                text.replace_range(range, "");
+                *text = text.trim().to_string();
+            }
+        }
+    }
 
     let mut native_title = None;
     let mut aka = Vec::new();
@@ -356,6 +374,7 @@ pub fn parse_title_details(html: &str, title_id: &str) -> Option<TitleDetails> {
         year,
         poster,
         synopsis,
+        synopsis_source,
         statistics,
         country,
         r#type,

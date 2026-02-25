@@ -50,6 +50,10 @@ pub struct PersonDetails {
     )]
     pub biography: Option<String>,
 
+    /// The source of the biography.
+    #[schema(example = "MyDramaList")]
+    pub biography_source: Option<String>,
+
     /// Total number of users who follow this person.
     #[schema(example = 0)]
     pub followers: i32,

@@ -33,6 +33,10 @@ pub struct TitleDetails {
     )]
     pub synopsis: Option<String>,
 
+    /// The source of the synopsis/plot.
+    #[schema(example = "MyDramaList")]
+    pub synopsis_source: Option<String>,
+
     /// MyDramaList specific statistics for the title.
     pub statistics: Statistics,
 

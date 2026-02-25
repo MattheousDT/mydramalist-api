@@ -7,7 +7,8 @@ use std::sync::LazyLock;
 
 static WHITESPACE_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\s+").expect("Invalid Regex"));
-
+static SOURCE_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\s*\(\s*Source:\s*(.+?)\)\s*$").expect("Invalid Regex"));
 static FILM_TITLE_SEL: LazyLock<Selector> =
     LazyLock::new(|| Selector::parse(".film-title").unwrap());
 static FOLLOWERS_SEL: LazyLock<Selector> =
@@ -122,9 +123,15 @@ pub fn parse_person_details(html: &str, person_id: &str) -> Option<PersonDetails
                 if el.value().classes().any(|c| c == "hidden-md-up") {
                     continue;
                 }
-                if node_name == "a" && el.text().collect::<String>().contains("Edit Biography") {
-                    continue;
+
+                if node_name == "a" {
+                    if let Some(href) = el.value().attr("href") {
+                        if href.contains("/edit/people/details") {
+                            continue;
+                        }
+                    }
                 }
+
                 if node_name == "br" {
                     biography.push('\n');
                 } else {
@@ -138,8 +145,22 @@ pub fn parse_person_details(html: &str, person_id: &str) -> Option<PersonDetails
         }
     }
 
-    let biography = biography.replace(" \n", "\n").replace("\n ", "\n");
-    let biography = biography.trim().to_string();
+    let mut biography = biography.replace(" \n", "\n").replace("\n ", "\n");
+    biography = biography.trim().to_string();
+
+    let mut biography_source = None;
+    if !biography.is_empty() {
+        if let Some(captures) = SOURCE_RE.captures(&biography) {
+            if let Some(source_match) = captures.get(1) {
+                biography_source = Some(source_match.as_str().to_string());
+                // Remove the source text from the biography
+                let range = captures.get(0).unwrap().range();
+                biography.replace_range(range, "");
+                biography = biography.trim().to_string();
+            }
+        }
+    }
+
     let biography = if biography.is_empty() {
         None
     } else {
@@ -239,6 +260,7 @@ pub fn parse_person_details(html: &str, person_id: &str) -> Option<PersonDetails
         born,
         age,
         biography,
+        biography_source,
         followers,
         hearts,
         portrait,
